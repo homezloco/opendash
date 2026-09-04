@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -28,7 +29,15 @@ func TestLiveNginxLifecycle(t *testing.T) {
 		t.Skipf("cannot connect to docker daemon: %v", err)
 	}
 
-	appsRoot := t.TempDir()
+	appsRoot, err := os.MkdirTemp(".", ".opendash-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	appsRoot, err = filepath.Abs(appsRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(appsRoot) })
 	rt := docker.NewWithRoot(appsRoot)
 
 	m := &models.Manifest{
@@ -89,8 +98,8 @@ func TestLiveNginxLifecycle(t *testing.T) {
 	defer func() {
 		// Best-effort cleanup of only resources created in this test.
 		_, _ = rt.Uninstall(context.Background(), projectName, composePath)
-		_ = exec.Command("docker", "volume", "rm", "-f", projectName+"-Data").Run()
-		_ = exec.Command("docker", "rmi", "-f", "docker.io/library/nginx:stable@sha256:09cc2702709e6388d979d8030e3ab4eb1ceb699b2dced26d7543e872a822e823").Run()
+		_ = exec.Command("docker", "volume", "rm", "-f", projectName+"_"+plan.Volumes[0].Name).Run()
+		_ = exec.Command("docker", "rmi", "-f", "docker.io/library/nginx:stable@sha256:a3dd43c8fc7a7bab8bca52ec19b97d3e9e230c2f66947c9210f28486e04c1405").Run()
 	}()
 
 	waitCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
