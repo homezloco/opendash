@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opendash-project.github.io/opendash/schemas/app-manifest.schema.json",
+  "title": "OpenDash App Manifest",
+  "description": "Schema for an OpenDash catalog application manifest.",
+  "type": "object",
+  "required": ["id", "name", "version", "description", "category", "icon"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "minLength": 1,
+      "maxLength": 64,
+      "description": "URL-safe kebab-case identifier."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Human-readable app name."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-zA-Z0-9.]+)?(\\+[a-zA-Z0-9.]+)?$",
+      "description": "Semantic version or pre-release build."
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "category": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 32
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "icon": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32,
+      "description": "Icon identifier, emoji, or short initials."
+    },
+    "website": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://"
+    },
+    "source": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://",
+      "description": "Upstream project source URL."
+    },
+    "maintainer": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "license": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "compose": {
+      "type": "object",
+      "required": [],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_ \\-./]+[.](yml|yaml|json)$",
+          "minLength": 1
+        },
+        "inline": {
+          "type": "object",
+          "required": ["services"],
+          "additionalProperties": false,
+          "properties": {
+            "services": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": { "$ref": "#/$defs/ComposeService" }
+            },
+            "networks": {
+              "type": "object"
+            },
+            "volumes": {
+              "type": "object"
+            }
+          }
+        },
+        "projectName": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "maxLength": 64
+        },
+        "mainService": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "anyOf": [
+        { "required": ["file"] },
+        { "required": ["inline"] }
+      ]
+    },
+    "endpoints": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["label", "port", "kind"],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "port": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/",
+            "maxLength": 256
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["web", "api", "tcp", "udp"]
+          }
+        }
+      }
+    },
+    "storage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "defaultSizeGb": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
+        }
+      }
+    },
+    "secrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]*$",
+            "maxLength": 64
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "config": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["key"],
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[A-Z_][A-Z0-9_]*$",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "defaultValue": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "secret": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["network", "privileged", "capability", "device", "host-path", "ipc", "pid", "root-user"]
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ComposeService": {
+      "type": "object",
+      "required": ["image"],
+      "additionalProperties": false,
+      "properties": {
+        "image": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "container_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "restart": {
+          "type": "string",
+          "enum": ["no", "always", "unless-stopped", "on-failure"]
+        },
+        "ports": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^((\\d{1,3}\\.){0,3}\\d{1,3}:)?\\d+:\\d+$|^\\d+$",
+            "maxLength": 128
+          }
+        },
+        "volumes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 512
+          }
+        },
+        "environment": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "cap_add": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "cap_drop": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "privileged": {
+          "type": "boolean"
+        },
+        "network_mode": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "user": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "healthcheck": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "test": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "interval": { "type": "string" },
+            "timeout": { "type": "string" },
+            "retries": { "type": "integer", "minimum": 1 },
+            "disable": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

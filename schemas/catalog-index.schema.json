@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opendash-project.github.io/opendash/schemas/catalog-index.schema.json",
+  "title": "OpenDash Catalog Index",
+  "description": "Schema for the catalog index that lists all catalog application manifests.",
+  "type": "object",
+  "required": ["version", "generatedAt", "apps"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[a-zA-Z0-9.]+)?$",
+      "description": "Catalog index semantic version."
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "schemaUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "apps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/CatalogEntry"
+      }
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "CatalogEntry": {
+      "type": "object",
+      "required": ["id", "name", "version", "category", "manifestPath"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?(\\+[a-zA-Z0-9.]+)?$"
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 512
+        },
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "icon": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "installed": {
+          "type": "boolean"
+        },
+        "manifestPath": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_\\-./]+[.]json$",
+          "minLength": 1,
+          "description": "Relative path from the catalog root to the manifest file."
+        }
+      }
+    }
+  }
+}

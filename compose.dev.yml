@@ -1,0 +1,28 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - OPENDASH_HTTP_HOST=0.0.0.0
+      - OPENDASH_HTTP_PORT=8080
+      - OPENDASH_LOG_LEVEL=info
+      - OPENDASH_USE_DOCKER_RUNTIME=false
+      - OPENDASH_DB_PATH=/var/lib/opendash/opendash.db
+      - OPENDASH_DEMO_MODE=true
+      - OPENDASH_AUTH_ENABLED=true
+      - OPENDASH_SECURE_COOKIES=false
+    volumes:
+      - opendash-data:/var/lib/opendash
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=50m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  opendash-data:

@@ -1,0 +1,43 @@
+# User guide
+
+## Bootstrap and sign in
+
+On first launch, create the single administrator. The username must be 3–64 characters and the password 12–1024 characters. Bootstrap is one-time. A successful login invalidates the prior administrator session; there is no multi-user management or password-reset workflow.
+
+The browser keeps an `HttpOnly` session cookie and the frontend sends the session CSRF token for mutations. If HTTPS is in use, enable secure cookies.
+
+## Browse and install from the catalog
+
+The catalog is loaded from the local `index.json`; OpenDash does not fetch GitHub or other remote catalogs. Open an app, request its install plan, and review:
+
+- image references and digest-pinning warnings;
+- generated localhost ports and named volumes;
+- effective configuration (secret fields are marked sensitive);
+- requested permissions and detected privileged/host-network/root/capability risks;
+- existing app, project, path, and known fixed-port conflicts.
+
+Review is advisory, not signature or provenance verification. Submit install only after resolving required configuration. Installation is asynchronous: the API records and returns an operation, while the frontend polls it. A second concurrent operation for the app is rejected.
+
+## Lifecycle and observation
+
+Installed-app details provide start, stop, restart, and logs. These lifecycle actions also return asynchronous operations. Logs are a bounded Compose tail (100 lines by default; API accepts 1–10,000), not streaming or durable log storage.
+
+When app data is read, OpenDash runs `docker compose ps` and updates displayed service state, health, and published endpoint ports. This is request-time observation, not continuous monitoring. Docker/Compose errors can leave persisted state stale or report an operation failure.
+
+Operations execute in the API process. Graceful shutdown cancels active work; after a crash/restart, records left running are marked failed. No rollback, resumable queue, or multi-instance coordination is provided.
+
+## Uninstall and retained data
+
+Always review the uninstall plan. It lists Compose-derived containers, images, networks, and volumes and reports that data is retained. Applying uninstall runs `docker compose down` **without** `--volumes`:
+
+- project containers and the Compose network are normally removed;
+- named volumes remain;
+- images are not removed;
+- generated Compose and environment files remain below the apps root;
+- the installed-app record is removed after successful completion.
+
+Retention prevents automatic volume deletion, but it is not a backup, restore workflow, or recovery guarantee. Record the project/volume names before uninstall and manage retained resources manually with Docker. OpenDash has no reinstall/adopt or secure-delete workflow.
+
+## Feature boundaries
+
+Remote/GitHub sources, application updates and update diffs, backups, restore verification, recovery automation, image-signature checks, notifications, and continuous monitoring are not implemented. Protection/backup-looking rows in demo or mock data are illustrative dashboard data only.

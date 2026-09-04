@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "generatedAt": "2026-09-04T12:00:00Z",
+  "schemaUrl": "https://opendash-project.github.io/opendash/schemas/catalog-index.schema.json",
+  "apps": [
+    {
+      "id": "uptime-kuma",
+      "name": "Uptime Kuma",
+      "version": "1.23.15",
+      "description": "Self-hosted monitoring tool that tracks uptime of websites and services.",
+      "category": "Monitoring",
+      "icon": "UK",
+      "installed": false,
+      "manifestPath": "apps/uptime-kuma/app.json"
+    }
+  ],
+  "categories": [
+    {
+      "id": "monitoring",
+      "name": "Monitoring"
+    }
+  ]
+}

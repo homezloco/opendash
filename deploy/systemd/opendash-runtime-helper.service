@@ -1,0 +1,20 @@
+[Unit]
+Description=OpenDash runtime helper (future, disabled by default)
+After=opendash-api.service
+
+[Service]
+Type=simple
+User=opendash
+Group=opendash
+WorkingDirectory=/var/lib/opendash
+ExecStart=/usr/local/bin/opendash-runtime-helper
+Restart=no
+
+ConditionPathExists=/etc/opendash/runtime-helper.enabled
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

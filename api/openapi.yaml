@@ -1,0 +1,1236 @@
+openapi: 3.0.3
+info:
+  title: OpenDash API
+  version: 0.1.0
+  description: >-
+    Persistent home-server dashboard API with single-administrator authentication.
+    When authentication is disabled, dashboard routes are public, bootstrap reports
+    authEnabled=false/bootstrapRequired=false, and all other auth endpoints return 404.
+
+security:
+  - sessionCookie: []
+
+servers:
+  - url: http://127.0.0.1:8080/api/v1
+    description: Local development server
+
+paths:
+  /bootstrap:
+    get:
+      security: []
+      summary: Get bootstrap status
+      operationId: getBootstrapStatus
+      responses:
+        "200":
+          description: Bootstrap status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BootstrapStatus"
+    post:
+      security: []
+      summary: Create the one administrator
+      operationId: bootstrapAdmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credentials"
+      responses:
+        "201":
+          description: Administrator created and session started
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "400":
+          description: Invalid request
+        "409":
+          description: Administrator already exists
+        "429":
+          description: Too many attempts
+  /auth/login:
+    post:
+      security: []
+      summary: Start an administrator session
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Credentials"
+      responses:
+        "200":
+          description: Authenticated session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Invalid credentials
+        "429":
+          description: Too many attempts
+  /auth/session:
+    get:
+      security: []
+      summary: Get current session
+      operationId: getSession
+      responses:
+        "200":
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Authentication required
+  /auth/logout:
+    post:
+      summary: End current session
+      operationId: logout
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "204":
+          description: Session ended
+  /health:
+    get:
+      security: []
+      summary: Health check
+      operationId: getHealth
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /readiness:
+    get:
+      summary: Runtime readiness
+      operationId: getReadiness
+      responses:
+        "200":
+          description: Readiness state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+        "503":
+          description: Runtime not ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessResponse"
+
+  /summary:
+    get:
+      summary: System summary
+      operationId: getSummary
+      responses:
+        "200":
+          description: System summary
+          headers:
+            X-OpenDash-Data-Source:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemSummary"
+
+  /attention:
+    get:
+      summary: Attention items
+      operationId: getAttention
+      responses:
+        "200":
+          description: Attention items
+          headers:
+            X-OpenDash-Data-Source:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttentionItem"
+
+  /apps:
+    get:
+      summary: Installed apps
+      operationId: getApps
+      responses:
+        "200":
+          description: Installed apps
+          headers:
+            X-OpenDash-Data-Source:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InstalledApp"
+
+  /apps/{id}:
+    get:
+      summary: App detail
+      operationId: getAppById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: App detail
+          headers:
+            X-OpenDash-Data-Source:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstalledApp"
+        "400":
+          description: Missing app id
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: App not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /catalog:
+    get:
+      summary: Catalog apps
+      operationId: getCatalog
+      responses:
+        "200":
+          description: Catalog apps
+          headers:
+            X-OpenDash-Data-Source:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CatalogApp"
+
+  /catalog/{id}:
+    get:
+      summary: Catalog app detail
+      operationId: getCatalogAppById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Catalog app detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogAppDetail"
+        "400":
+          description: Missing app id
+        "404":
+          description: Catalog app not found
+
+  /catalog/{id}/install-plan:
+    get:
+      summary: Preview an install plan for a catalog app
+      operationId: getInstallPlan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Install plan preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InstallPlan"
+        "400":
+          description: Invalid manifest or request
+        "404":
+          description: Catalog app not found
+
+  /catalog/{id}/install:
+    post:
+      summary: Install a catalog app
+      operationId: installApp
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                config:
+                  type: object
+                  additionalProperties:
+                    type: string
+      responses:
+        "202":
+          description: Install operation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operation"
+        "409":
+          description: App already installed, operation in progress, or conflicts
+
+  /operations/{id}:
+    get:
+      summary: Operation status
+      operationId: getOperationById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Operation status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operation"
+        "404":
+          description: Operation not found
+
+  /apps/{id}/start:
+    post:
+      summary: Start an installed app
+      operationId: startApp
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "202":
+          description: Start operation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operation"
+        "404":
+          description: App not found
+        "409":
+          description: Operation already in progress
+
+  /apps/{id}/stop:
+    post:
+      summary: Stop an installed app
+      operationId: stopApp
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "202":
+          description: Stop operation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operation"
+        "404":
+          description: App not found
+        "409":
+          description: Operation already in progress
+
+  /apps/{id}/restart:
+    post:
+      summary: Restart an installed app
+      operationId: restartApp
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "202":
+          description: Restart operation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operation"
+        "404":
+          description: App not found
+        "409":
+          description: Operation already in progress
+
+  /apps/{id}/logs:
+    get:
+      summary: Tail app logs
+      operationId: getAppLogs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: lines
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 100
+      responses:
+        "200":
+          description: Log output
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogOutput"
+        "404":
+          description: App not found
+
+  /apps/{id}/uninstall-plan:
+    get:
+      summary: Preview uninstall impact
+      operationId: getUninstallPlan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Uninstall preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComposePreview"
+        "404":
+          description: App not found
+
+  /apps/{id}/uninstall:
+    post:
+      summary: Uninstall an app (retains data)
+      operationId: uninstallApp
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/CSRFToken"
+      responses:
+        "202":
+          description: Uninstall operation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Operation"
+        "404":
+          description: App not found
+        "409":
+          description: Operation already in progress
+
+  /protection:
+    get:
+      summary: Protection overview
+      operationId: getProtection
+      responses:
+        "200":
+          description: Protection overview
+          headers:
+            X-OpenDash-Data-Source:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProtectionOverview"
+
+  /activity:
+    get:
+      summary: Activity events
+      operationId: getActivity
+      responses:
+        "200":
+          description: Activity events
+          headers:
+            X-OpenDash-Data-Source:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEvent"
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: opendash_session
+  parameters:
+    CSRFToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      schema:
+        type: string
+  schemas:
+    BootstrapStatus:
+      type: object
+      required: [authEnabled, bootstrapRequired]
+      properties:
+        authEnabled:
+          type: boolean
+        bootstrapRequired:
+          type: boolean
+    Credentials:
+      type: object
+      additionalProperties: false
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 64
+        password:
+          type: string
+          minLength: 12
+          maxLength: 1024
+          format: password
+    AuthSession:
+      type: object
+      required: [username, csrfToken, expiresAt]
+      properties:
+        username:
+          type: string
+        csrfToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    ReadinessResponse:
+      type: object
+      required: [docker, compose, dockerVersion, composeVersion, errors]
+      properties:
+        docker:
+          type: boolean
+        compose:
+          type: boolean
+        dockerVersion:
+          type: string
+        composeVersion:
+          type: string
+        errors:
+          type: array
+          items:
+            type: string
+
+    ErrorResponse:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+        request:
+          type: string
+
+    SystemSummary:
+      type: object
+      required:
+        - appsRunning
+        - appsTotal
+        - protectionStatus
+        - updatesAvailable
+        - storageUsedGb
+        - storageTotalGb
+        - cpuPercent
+        - memoryPercent
+        - uptimeSeconds
+        - health
+      properties:
+        appsRunning:
+          type: integer
+        appsTotal:
+          type: integer
+        protectionStatus:
+          $ref: "#/components/schemas/ProtectionStatus"
+        updatesAvailable:
+          type: integer
+        storageUsedGb:
+          type: number
+        storageTotalGb:
+          type: number
+        cpuPercent:
+          type: number
+        memoryPercent:
+          type: number
+        uptimeSeconds:
+          type: integer
+        health:
+          $ref: "#/components/schemas/HealthStatus"
+        demoData:
+          type: boolean
+
+    AttentionItem:
+      type: object
+      required:
+        - id
+        - severity
+        - title
+        - description
+        - timestamp
+        - dismissed
+      properties:
+        id:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        title:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        actionLabel:
+          type: string
+        actionRoute:
+          type: string
+        dismissed:
+          type: boolean
+
+    InstalledApp:
+      type: object
+      required:
+        - id
+        - name
+        - icon
+        - description
+        - status
+        - health
+        - version
+        - latestVersion
+        - category
+        - endpoints
+        - services
+        - storage
+        - updatedAt
+        - installedAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        description:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppStatus"
+        health:
+          $ref: "#/components/schemas/HealthStatus"
+        version:
+          type: string
+        latestVersion:
+          type: string
+        category:
+          type: string
+        endpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppEndpoint"
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppService"
+        storage:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppStorageVolume"
+        updatedAt:
+          type: string
+          format: date-time
+        installedAt:
+          type: string
+          format: date-time
+
+    CatalogApp:
+      type: object
+      required:
+        - id
+        - name
+        - icon
+        - description
+        - category
+        - version
+        - installed
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        version:
+          type: string
+        installed:
+          type: boolean
+
+    ProtectionOverview:
+      type: object
+      required:
+        - status
+        - rules
+        - threatsBlocked24h
+        - lastScanAt
+        - vpnConnected
+        - firewallActive
+        - dnsFilteringActive
+      properties:
+        status:
+          $ref: "#/components/schemas/ProtectionStatus"
+        rules:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProtectionRule"
+        threatsBlocked24h:
+          type: integer
+        lastScanAt:
+          type: string
+          format: date-time
+        vpnConnected:
+          type: boolean
+        firewallActive:
+          type: boolean
+        dnsFilteringActive:
+          type: boolean
+
+    ActivityEvent:
+      type: object
+      required:
+        - id
+        - type
+        - title
+        - description
+        - timestamp
+        - severity
+      properties:
+        id:
+          type: string
+        type:
+          $ref: "#/components/schemas/ActivityType"
+        title:
+          type: string
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        severity:
+          $ref: "#/components/schemas/Severity"
+
+    AppEndpoint:
+      type: object
+      required:
+        - label
+        - url
+        - kind
+      properties:
+        label:
+          type: string
+        url:
+          type: string
+        kind:
+          $ref: "#/components/schemas/EndpointKind"
+
+    AppService:
+      type: object
+      required:
+        - name
+        - status
+        - cpuPercent
+        - memoryMb
+      properties:
+        name:
+          type: string
+        status:
+          $ref: "#/components/schemas/AppStatus"
+        cpuPercent:
+          type: number
+        memoryMb:
+          type: number
+
+    AppStorageVolume:
+      type: object
+      required:
+        - name
+        - mountPath
+        - usedGb
+        - totalGb
+      properties:
+        name:
+          type: string
+        mountPath:
+          type: string
+        usedGb:
+          type: number
+        totalGb:
+          type: number
+
+    ProtectionRule:
+      type: object
+      required:
+        - id
+        - name
+        - enabled
+        - category
+        - status
+        - description
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        enabled:
+          type: boolean
+        category:
+          $ref: "#/components/schemas/ProtectionCategory"
+        status:
+          $ref: "#/components/schemas/HealthStatus"
+        description:
+          type: string
+
+    ProtectionStatus:
+      type: string
+      enum: [armed, monitoring, degraded, offline]
+
+    HealthStatus:
+      type: string
+      enum: [healthy, warning, critical, unknown]
+
+    AppStatus:
+      type: string
+      enum: [running, stopped, updating, error, installing]
+
+    Severity:
+      type: string
+      enum: [critical, warning, info, success, error]
+
+    ActivityType:
+      type: string
+      enum: [app, system, security, update, user]
+
+    ProtectionCategory:
+      type: string
+      enum: [firewall, vpn, dns, ids, backup]
+
+    EndpointKind:
+      type: string
+      enum: [web, api, tcp, udp]
+
+    CatalogAppDetail:
+      allOf:
+        - $ref: "#/components/schemas/CatalogApp"
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+        website:
+          type: string
+        source:
+          type: string
+        maintainer:
+          type: string
+        license:
+          type: string
+        compose:
+          $ref: "#/components/schemas/ManifestCompose"
+        endpoints:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManifestEndpoint"
+        storage:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManifestStorage"
+        secrets:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManifestSecret"
+        config:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManifestConfig"
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManifestPermission"
+
+    ManifestCompose:
+      type: object
+      properties:
+        file:
+          type: string
+        inline:
+          $ref: "#/components/schemas/ManifestInlineCompose"
+        projectName:
+          type: string
+        mainService:
+          type: string
+
+    ManifestInlineCompose:
+      type: object
+      required: [services]
+      properties:
+        services:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/ManifestService"
+        networks:
+          type: object
+        volumes:
+          type: object
+
+    ManifestService:
+      type: object
+      required: [image]
+      properties:
+        image:
+          type: string
+        container_name:
+          type: string
+        restart:
+          type: string
+          enum: [no, always, unless-stopped, on-failure]
+        ports:
+          type: array
+          items:
+            type: string
+        volumes:
+          type: array
+          items:
+            type: string
+        environment:
+          type: object
+          additionalProperties:
+            type: string
+        cap_add:
+          type: array
+          items:
+            type: string
+        cap_drop:
+          type: array
+          items:
+            type: string
+        privileged:
+          type: boolean
+        network_mode:
+          type: string
+        user:
+          type: string
+        depends_on:
+          type: array
+          items:
+            type: string
+
+    ManifestEndpoint:
+      type: object
+      required: [label, port, kind]
+      properties:
+        label:
+          type: string
+        port:
+          type: integer
+        path:
+          type: string
+        kind:
+          $ref: "#/components/schemas/EndpointKind"
+
+    ManifestStorage:
+      type: object
+      required: [name, path]
+      properties:
+        name:
+          type: string
+        path:
+          type: string
+        defaultSizeGb:
+          type: number
+
+    ManifestSecret:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        required:
+          type: boolean
+
+    ManifestConfig:
+      type: object
+      required: [key]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        defaultValue:
+          type: string
+        required:
+          type: boolean
+        secret:
+          type: boolean
+
+    ManifestPermission:
+      type: object
+      required: [kind]
+      properties:
+        kind:
+          type: string
+        description:
+          type: string
+        required:
+          type: boolean
+
+    InstallPlan:
+      type: object
+      required:
+        - appId
+        - name
+        - version
+        - images
+        - ports
+        - volumes
+        - environment
+        - permissions
+        - risks
+        - conflicts
+        - projectName
+        - projectPath
+      properties:
+        appId:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        ports:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedPort"
+        volumes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedVolume"
+        environment:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedConfig"
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManifestPermission"
+        risks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Risk"
+        conflicts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Conflict"
+        projectName:
+          type: string
+        projectPath:
+          type: string
+
+    PlannedPort:
+      type: object
+      required: [label, containerPort, kind]
+      properties:
+        label:
+          type: string
+        containerPort:
+          type: integer
+        hostPort:
+          type: integer
+        kind:
+          type: string
+
+    PlannedVolume:
+      type: object
+      required: [name, mountPath, hostPath]
+      properties:
+        name:
+          type: string
+        mountPath:
+          type: string
+        hostPath:
+          type: string
+
+    PlannedConfig:
+      type: object
+      required: [key, value, source, secret]
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        source:
+          type: string
+        secret:
+          type: boolean
+
+    Risk:
+      type: object
+      required: [severity, category, description]
+      properties:
+        severity:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+
+    Conflict:
+      type: object
+      required: [kind, target, description]
+      properties:
+        kind:
+          type: string
+        target:
+          type: string
+        description:
+          type: string
+
+    Operation:
+      type: object
+      required:
+        - id
+        - appId
+        - kind
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        appId:
+          type: string
+        kind:
+          type: string
+        status:
+          type: string
+        error:
+          type: string
+        output:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ComposePreview:
+      type: object
+      required:
+        - projectName
+        - containers
+        - images
+        - volumes
+        - networks
+        - dataRetained
+      properties:
+        projectName:
+          type: string
+        containers:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+        volumes:
+          type: array
+          items:
+            type: string
+        networks:
+          type: array
+          items:
+            type: string
+        dataRetained:
+          type: boolean
+
+    LogOutput:
+      type: object
+      required: [output]
+      properties:
+        output:
+          type: string

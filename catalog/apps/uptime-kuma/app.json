@@ -1,0 +1,64 @@
+{
+  "id": "uptime-kuma",
+  "name": "Uptime Kuma",
+  "version": "1.23.15",
+  "description": "Self-hosted monitoring tool that tracks uptime of websites and services.",
+  "category": "Monitoring",
+  "tags": ["monitoring", "uptime", "alerting"],
+  "icon": "UK",
+  "website": "https://uptime.kuma.pet",
+  "source": "https://github.com/louislam/uptime-kuma",
+  "maintainer": "OpenDash",
+  "license": "MIT",
+  "compose": {
+    "inline": {
+      "services": {
+        "uptime-kuma": {
+          "image": "docker.io/louislam/uptime-kuma:1.23.15@sha256:8eea954901871d3e33f2dbddf9d6be07d362b0fc01c4ec613f390d4bd3d99cf2",
+          "container_name": "opendash-uptime-kuma",
+          "restart": "unless-stopped",
+          "volumes": [
+            "/app/data"
+          ]
+        }
+      },
+      "volumes": {
+        "opendash-uptime-kuma-Data": {}
+      }
+    },
+    "projectName": "opendash-uptime-kuma",
+    "mainService": "uptime-kuma"
+  },
+  "endpoints": [
+    {
+      "label": "Web UI",
+      "port": 3001,
+      "path": "/",
+      "kind": "web"
+    },
+    {
+      "label": "TCP Ping",
+      "port": 3001,
+      "kind": "tcp"
+    }
+  ],
+  "storage": [
+    {
+      "name": "Data",
+      "path": "/app/data",
+      "defaultSizeGb": 5
+    }
+  ],
+  "secrets": [],
+  "config": [
+    {
+      "key": "TZ",
+      "label": "Timezone",
+      "description": "Container timezone, e.g. UTC or America/New_York",
+      "defaultValue": "UTC",
+      "required": false,
+      "secret": false
+    }
+  ],
+  "permissions": []
+}
