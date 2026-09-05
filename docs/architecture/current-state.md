@@ -3,7 +3,7 @@
 ## Components
 
 - `cmd/opendash` loads environment configuration, opens SQLite, recovers interrupted operation records, selects Docker or no-op runtime, and serves the API.
-- `internal/api` provides `/api/v1`, authentication/CSRF middleware, catalog/install planning, lifecycle handlers, observation, and in-process asynchronous operation workers.
+- `internal/api` provides `/api/v1`, authentication/CSRF middleware, persisted dashboard-preference endpoints, catalog/install planning, lifecycle handlers, observation, and in-process asynchronous operation workers.
 - `internal/auth` stores one Argon2id administrator and hashed opaque sessions in SQLite.
 - `internal/store` owns SQLite migrations and persistent dashboard, app, revision, and operation records. `internal/data` supplies optional demo seed rows.
 - `internal/catalog` loads local JSON, validates runtime constraints, evaluates selected risks/conflicts, allocates localhost ports, and renders Compose/environment files.
@@ -31,7 +31,7 @@ App reads invoke Compose observation and map service/container health and publis
 | Docker Compose install/start/stop/restart/logs/uninstall/observation | Implemented, opt-out by configuration |
 | Data retention on uninstall | Implemented as Compose down without volume deletion; recovery is manual |
 | Asynchronous operations | Implemented in-process; persistence/restart handling is partial |
-| Real frontend and explicit mock mode | Implemented |
+| Real frontend, persisted dashboard preferences, and explicit mock mode | Implemented |
 | Container/systemd examples | Partial; examples disable Docker and SPA serving is separate |
 | GitHub/remote catalog sources | Not implemented |
 | Updates or update diffs | Not implemented |

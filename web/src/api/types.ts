@@ -35,6 +35,18 @@ export type ProtectionStatus = "armed" | "monitoring" | "degraded" | "offline";
 export type HealthStatus = "healthy" | "warning" | "critical" | "unknown";
 export type AppStatus = "running" | "stopped" | "updating" | "error" | "installing";
 
+export interface DashboardPreferences {
+  defaultView: "grid" | "list";
+  tileDensity: "compact" | "normal" | "spacious";
+  tileSize: "small" | "medium" | "large" | "wide";
+  groupBy: "none" | "category" | "status" | "health";
+  sortBy: "manual" | "name" | "status" | "category";
+  tileOrder: string[];
+  favoriteAppIds: string[];
+  hiddenFields: Record<"version" | "status" | "health" | "endpoints", boolean>;
+  updatedAt?: string;
+}
+
 export interface SystemSummary {
   appsRunning: number;
   appsTotal: number;

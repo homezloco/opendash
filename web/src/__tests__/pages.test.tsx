@@ -42,9 +42,9 @@ describe("AppsPage", () => {
   it("shows app cards after loading", async () => {
     renderWithRouter(<AppsPage />);
     await waitFor(() => {
-      expect(screen.getByText("Nextcloud")).toBeInTheDocument();
+      expect(screen.getByText(/Nextcloud/)).toBeInTheDocument();
     });
-    expect(screen.getByText("Immich")).toBeInTheDocument();
+    expect(screen.getByText(/Immich/)).toBeInTheDocument();
   });
 });
 

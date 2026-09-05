@@ -159,6 +159,9 @@ func (s *SQLiteStore) get(ctx context.Context, kind string, dst any) error {
 	return json.Unmarshal(payload, dst)
 }
 func emptyValue(kind string) string {
+	if kind == "dashboard_preferences" {
+		return `{"defaultView":"grid","tileDensity":"normal","tileSize":"medium","groupBy":"none","sortBy":"manual","tileOrder":[],"favoriteAppIds":[],"hiddenFields":{}}`
+	}
 	if kind == "summary" {
 		return `{"protectionStatus":"offline","health":"unknown"}`
 	}
@@ -167,6 +170,37 @@ func emptyValue(kind string) string {
 	}
 	return `[]`
 }
+func (s *SQLiteStore) GetDashboardPreferences(ctx context.Context) (*models.DashboardPreferences, error) {
+	preferences := models.DefaultDashboardPreferences()
+	if err := s.get(ctx, "dashboard_preferences", preferences); err != nil {
+		return nil, err
+	}
+	if preferences.TileOrder == nil {
+		preferences.TileOrder = []string{}
+	}
+	if preferences.FavoriteAppIDs == nil {
+		preferences.FavoriteAppIDs = []string{}
+	}
+	if preferences.HiddenFields == nil {
+		preferences.HiddenFields = map[string]bool{}
+	}
+	return preferences, nil
+}
+
+func (s *SQLiteStore) SetDashboardPreferences(ctx context.Context, preferences *models.DashboardPreferences) error {
+	preferences.UpdatedAt = time.Now().UTC()
+	payload, err := json.Marshal(preferences)
+	if err != nil {
+		return fmt.Errorf("encode dashboard preferences: %w", err)
+	}
+	_, err = s.db.ExecContext(ctx, `INSERT INTO dashboard_data(kind, payload) VALUES ('dashboard_preferences', ?)
+		ON CONFLICT(kind) DO UPDATE SET payload=excluded.payload`, payload)
+	if err != nil {
+		return fmt.Errorf("save dashboard preferences: %w", err)
+	}
+	return nil
+}
+
 func (s *SQLiteStore) GetSummary(ctx context.Context) (*models.SystemSummary, error) {
 	var v models.SystemSummary
 	if err := s.get(ctx, "summary", &v); err != nil {

@@ -671,6 +671,35 @@ paths:
       responses:
         "200": { description: Import preview }
 
+  /dashboard/preferences:
+    get:
+      summary: Get dashboard preferences
+      operationId: getDashboardPreferences
+      responses:
+        "200":
+          description: Dashboard preferences (defaults when not configured)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardPreferences" }
+    put:
+      summary: Replace dashboard preferences
+      operationId: updateDashboardPreferences
+      parameters:
+        - $ref: "#/components/parameters/CSRFToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DashboardPreferences" }
+      responses:
+        "200":
+          description: Saved dashboard preferences
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DashboardPreferences" }
+        "400": { description: Invalid preferences }
+        "403": { description: Invalid CSRF token }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -685,6 +714,27 @@ components:
       schema:
         type: string
   schemas:
+    DashboardPreferences:
+      type: object
+      additionalProperties: false
+      required: [defaultView, tileDensity, tileSize, groupBy, sortBy, tileOrder, favoriteAppIds, hiddenFields]
+      properties:
+        defaultView: { type: string, enum: [grid, list] }
+        tileDensity: { type: string, enum: [compact, normal, spacious] }
+        tileSize: { type: string, enum: [small, medium, large, wide] }
+        groupBy: { type: string, enum: [none, category, status, health] }
+        sortBy: { type: string, enum: [manual, name, status, category] }
+        tileOrder: { type: array, items: { type: string } }
+        favoriteAppIds: { type: array, items: { type: string } }
+        hiddenFields:
+          type: object
+          additionalProperties: false
+          properties:
+            version: { type: boolean }
+            status: { type: boolean }
+            health: { type: boolean }
+            endpoints: { type: boolean }
+        updatedAt: { type: string, format: date-time }
     BootstrapStatus:
       type: object
       required: [authEnabled, bootstrapRequired]

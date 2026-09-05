@@ -6,6 +6,10 @@ On first launch, create the single administrator. The username must be 3–64 ch
 
 The browser keeps an `HttpOnly` session cookie and the frontend sends the session CSRF token for mutations. If HTTPS is in use, enable secure cookies.
 
+## Dashboard preferences
+
+On the **Apps** page, open **Dashboard settings** to choose grid or list view, tile density and size, grouping and sorting, and which compact fields are hidden. Star favorite apps and use **Move to top** to define manual order. Preferences are saved in SQLite for the administrator and restored on later visits.
+
 ## Browse and install from the catalog
 
 The catalog is loaded from the local `index.json`; OpenDash does not fetch GitHub or other remote catalogs. Open an app, request its install plan, and review:

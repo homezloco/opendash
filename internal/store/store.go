@@ -18,6 +18,8 @@ type Store interface {
 	ListCatalog(ctx context.Context) ([]models.CatalogApp, error)
 	GetProtection(ctx context.Context) (*models.ProtectionOverview, error)
 	ListActivity(ctx context.Context) ([]models.ActivityEvent, error)
+	GetDashboardPreferences(ctx context.Context) (*models.DashboardPreferences, error)
+	SetDashboardPreferences(ctx context.Context, preferences *models.DashboardPreferences) error
 }
 
 type AppManager interface {
@@ -117,6 +119,14 @@ func (s *MemoryStore) GetProtection(ctx context.Context) (*models.ProtectionOver
 
 func (s *MemoryStore) ListActivity(ctx context.Context) ([]models.ActivityEvent, error) {
 	return data.ActivityEvents, nil
+}
+
+func (s *MemoryStore) GetDashboardPreferences(ctx context.Context) (*models.DashboardPreferences, error) {
+	return models.DefaultDashboardPreferences(), nil
+}
+
+func (s *MemoryStore) SetDashboardPreferences(ctx context.Context, preferences *models.DashboardPreferences) error {
+	return nil
 }
 
 func (s *MemoryStore) CreateAppInstance(ctx context.Context, instance *models.AppInstance) error {

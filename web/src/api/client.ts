@@ -20,6 +20,7 @@ import type {
   VerificationResult,
   RecoveryInventory,
   RecoveryImportPreview,
+  DashboardPreferences,
 } from "./types";
 import {
   mockActivity,
@@ -95,6 +96,7 @@ function getMockData<T>(path: string): T {
     "/catalog": mockCatalogApps,
     "/protection": mockProtection,
     "/activity": mockActivity,
+    "/dashboard/preferences": { defaultView: "grid", tileDensity: "normal", tileSize: "medium", groupBy: "none", sortBy: "manual", tileOrder: [], favoriteAppIds: [], hiddenFields: {} },
   };
   if (path.startsWith("/apps/")) {
     const rest = path.slice(6);
@@ -151,6 +153,8 @@ export const api = {
   getSummary: () => request<SystemSummary>("/summary"),
   getAttentionItems: () => request<AttentionItem[]>("/attention"),
   getApps: () => request<InstalledApp[]>("/apps"),
+  getDashboardPreferences: () => request<DashboardPreferences>("/dashboard/preferences"),
+  updateDashboardPreferences: (preferences: DashboardPreferences) => request<DashboardPreferences>("/dashboard/preferences", { method: "PUT", body: JSON.stringify(preferences) }),
   getApp: (id: string) => request<InstalledApp>(`/apps/${id}`),
   getCatalog: () => request<CatalogApp[]>("/catalog"),
   getCatalogApp: (id: string) => request<CatalogAppDetail>(`/catalog/${id}`),
