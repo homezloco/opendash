@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"github.com/opendash-project/opendash/internal/auth"
+	"github.com/opendash-project/opendash/internal/backup"
 	"github.com/opendash-project/opendash/internal/catalog"
 	"github.com/opendash-project/opendash/internal/models"
+	"github.com/opendash-project/opendash/internal/recovery"
 	"github.com/opendash-project/opendash/internal/runtime"
 	"github.com/opendash-project/opendash/internal/sources"
 	"github.com/opendash-project/opendash/internal/store"
@@ -35,6 +37,8 @@ type Handlers struct {
 	sourceService       *sources.Service
 	updateHealthTimeout time.Duration
 	updateHealthPoll    time.Duration
+	backupService       *backup.Service
+	recoveryService     *recovery.Service
 }
 
 func NewHandlers(st store.Store, runtime runtime.Runtime) *Handlers {
@@ -55,7 +59,18 @@ func NewHandlers(st store.Store, runtime runtime.Runtime) *Handlers {
 	if sm, ok := st.(store.SourceManager); ok {
 		h.sourceService = sources.NewService(sm, nil, h.appsRoot)
 	}
+	h.ConfigureBackups("./data/backups")
 	return h
+}
+
+func (h *Handlers) ConfigureBackups(root string) {
+	bm, bok := h.store.(store.BackupManager)
+	am, aok := h.store.(store.AppManager)
+	sm, sok := h.store.(store.SourceManager)
+	if bok && aok && sok {
+		h.backupService = backup.NewService(bm, am, sm, root, backup.DockerArchiver{}, nil)
+		h.recoveryService = recovery.NewService(am, sm, bm)
+	}
 }
 
 func (h *Handlers) ConfigureCatalog(catalogRoot, appsRoot string) {

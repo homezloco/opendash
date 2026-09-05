@@ -1,3 +1,17 @@
+export interface BackupArchive {
+  id: string; jobId: string; appId: string; size: number; sha256: string;
+  manifestSha256?: string; createdAt: string; verifiedAt?: string; integrityOk?: boolean;
+}
+export interface RestorePreview {
+  backupId: string; appId: string; volumes: string[]; images: string[];
+  manifest: { id: string; name: string; version: string }; compatible: boolean;
+  compatibility: string[]; migrationRisk?: string; rollbackSafe: boolean;
+  sourceTrusted: boolean; integrityOk: boolean;
+}
+export interface VerificationResult { backupId: string; projectName: string; healthy: boolean; cleanedUp: boolean; verifiedAt: string; error?: string }
+export interface RecoveryInventory { version: number; exportedAt: string; apps: unknown[]; sources: unknown[]; backups: BackupArchive[] }
+export interface RecoveryImportPreview { valid: boolean; apps: number; sources: number; backups: number; untrustedSources: string[]; conflicts: { appId: string; kind: string; message: string }[]; strategy: string }
+
 export interface BootstrapStatus {
   authEnabled: boolean;
   bootstrapRequired: boolean;

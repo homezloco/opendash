@@ -62,3 +62,22 @@ CREATE TABLE IF NOT EXISTS manifest_sources (
 CREATE INDEX IF NOT EXISTS manifest_sources_url ON manifest_sources(source_url);
 CREATE INDEX IF NOT EXISTS manifest_sources_owner_repo ON manifest_sources(owner, repo);
 ALTER TABLE app_instances ADD COLUMN source_id TEXT REFERENCES manifest_sources(id) ON DELETE SET NULL;
+
+-- migration:4
+CREATE TABLE backup_jobs (
+    id TEXT PRIMARY KEY, app_id TEXT NOT NULL REFERENCES app_instances(id) ON DELETE CASCADE,
+    status TEXT NOT NULL, error TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+);
+CREATE INDEX backup_jobs_app_id ON backup_jobs(app_id);
+CREATE TABLE backup_archives (
+    id TEXT PRIMARY KEY, job_id TEXT NOT NULL REFERENCES backup_jobs(id) ON DELETE CASCADE,
+    app_id TEXT NOT NULL REFERENCES app_instances(id) ON DELETE CASCADE, path TEXT NOT NULL UNIQUE,
+    size INTEGER NOT NULL, sha256 TEXT NOT NULL, manifest_sha256 TEXT NOT NULL DEFAULT '',
+    created_at INTEGER NOT NULL, verified_at INTEGER, integrity_ok INTEGER
+);
+CREATE INDEX backup_archives_app_created ON backup_archives(app_id, created_at DESC);
+CREATE TABLE backup_schedules (
+    id TEXT PRIMARY KEY, app_id TEXT NOT NULL UNIQUE REFERENCES app_instances(id) ON DELETE CASCADE,
+    enabled INTEGER NOT NULL, interval_hours INTEGER NOT NULL, retention_count INTEGER NOT NULL,
+    retention_days INTEGER NOT NULL, next_run_at INTEGER, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+);

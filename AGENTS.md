@@ -27,4 +27,4 @@ The optional `docker_live` test mutates the Docker daemon and uses the exact res
 
 ## Current limitations
 
-Remote/GitHub catalogs, update diffs, backup/restore verification, image-signature verification, recovery automation, and privileged-helper isolation are not implemented. Do not infer backend capabilities from frontend mock data or describe the application as production-ready.
+Remote/GitHub catalogs, destructive restore, configured isolated restore verification, recovery apply automation, image-signature verification, and privileged-helper isolation are not implemented. Backup archive creation/preview and recovery inventory export/import preview are implemented. Do not infer backend capabilities from frontend mock data or describe the application as production-ready.

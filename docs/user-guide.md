@@ -18,6 +18,12 @@ The catalog is loaded from the local `index.json`; OpenDash does not fetch GitHu
 
 Review is advisory, not signature or provenance verification. Submit install only after resolving required configuration. Installation is asynchronous: the API records and returns an operation, while the frontend polls it. A second concurrent operation for the app is rejected.
 
+## Backups and recovery
+
+Manifests may declaratively identify named volumes to back up, whether configuration metadata is included, and migration/rollback risk. OpenDash never accepts executable backup hooks. The Backups page creates timestamped archives under `OPENDASH_BACKUPS_ROOT` (default `./data/backups`) using a temporary, network-disabled Docker container and applies count/age retention. Restore preview checks the archive checksum and displays volumes, images, manifest compatibility, risk, and current source trust without modifying data.
+
+The Recovery page exports a JSON inventory of installed apps, manifest sources, and backup records. Import preview validates an inventory, reports ID conflicts, and highlights untrusted sources. Destructive restore and recovery apply remain disabled. Isolated verification is represented by the API but returns unavailable unless a safe drill verifier is configured; it must never overwrite the running application's volumes.
+
 ## Lifecycle and observation
 
 Installed-app details provide start, stop, restart, and logs. These lifecycle actions also return asynchronous operations. Logs are a bounded Compose tail (100 lines by default; API accepts 1–10,000), not streaming or durable log storage.

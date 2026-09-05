@@ -212,6 +212,7 @@ type Manifest struct {
 	Config      []ManifestConfig     `json:"config,omitempty"`
 	Permissions []ManifestPermission `json:"permissions,omitempty"`
 	Upgrade     *ManifestUpgrade     `json:"upgrade,omitempty"`
+	Backup      *ManifestBackup      `json:"backup,omitempty"`
 }
 
 // ManifestUpgrade contains declarative update safety disclosures. It never

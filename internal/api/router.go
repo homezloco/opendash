@@ -38,6 +38,13 @@ func NewRouter(h *Handlers, bodyLimit int64) http.Handler {
 	protected.HandleFunc("DELETE /api/v1/sources/{id}", h.RemoveSource)
 	protected.HandleFunc("GET /api/v1/apps/{id}/update-plan", h.AppUpdatePlan)
 	protected.HandleFunc("POST /api/v1/apps/{id}/update", h.AppApplyUpdate)
+	protected.HandleFunc("POST /api/v1/apps/{id}/backups", h.CreateBackup)
+	protected.HandleFunc("GET /api/v1/apps/{id}/backups", h.ListBackups)
+	protected.HandleFunc("POST /api/v1/backups/{id}/restore-preview", h.RestorePreview)
+	protected.HandleFunc("POST /api/v1/backups/{id}/verify", h.VerifyBackup)
+	protected.HandleFunc("POST /api/v1/backups/{id}/restore", h.RestoreBackup)
+	protected.HandleFunc("GET /api/v1/recovery/export", h.RecoveryExport)
+	protected.HandleFunc("POST /api/v1/recovery/import-preview", h.RecoveryImportPreview)
 	root.Handle("/api/v1/", h.requireAuth(protected))
 	root.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusNotFound, "not_found", "resource not found")

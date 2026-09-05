@@ -630,6 +630,47 @@ paths:
         "400": { description: Confirmation or risk acknowledgement missing }
         "409": { description: Stale preview, blocked update, or concurrent operation }
 
+  /apps/{id}/backups:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      summary: List application backups
+      responses:
+        "200": { description: Backup archives }
+    post:
+      summary: Create an application-aware backup
+      responses:
+        "201": { description: Backup archive created }
+  /backups/{id}/restore-preview:
+    post:
+      summary: Preview a restore without changing app data
+      responses:
+        "200": { description: Restore compatibility and integrity preview }
+  /backups/{id}/verify:
+    post:
+      summary: Run an isolated restore verification drill
+      responses:
+        "200": { description: Verification result }
+        "501": { description: Verification unavailable }
+  /backups/{id}/restore:
+    post:
+      summary: Restore backup (currently disabled)
+      responses:
+        "501": { description: Destructive restore disabled }
+  /recovery/export:
+    get:
+      summary: Export recovery inventory
+      responses:
+        "200": { description: Apps, sources, and backups inventory }
+  /recovery/import-preview:
+    post:
+      summary: Validate and preview recovery inventory import
+      responses:
+        "200": { description: Import preview }
+
 components:
   securitySchemes:
     sessionCookie:

@@ -20,6 +20,7 @@ type Config struct {
 	UseDockerRuntime bool
 	CatalogRoot      string
 	AppsRoot         string
+	BackupsRoot      string
 	DatabasePath     string
 	DemoMode         bool
 	AuthEnabled      bool
@@ -40,6 +41,7 @@ func Load() (*Config, error) {
 		UseDockerRuntime: true,
 		CatalogRoot:      envOrDefault("OPENDASH_CATALOG_ROOT", "./catalog"),
 		AppsRoot:         envOrDefault("OPENDASH_APPS_ROOT", "./data/apps"),
+		BackupsRoot:      envOrDefault("OPENDASH_BACKUPS_ROOT", "./data/backups"),
 		DatabasePath:     envOrDefault("OPENDASH_DB_PATH", "./data/opendash.db"),
 		DemoMode:         false,
 		AuthEnabled:      true,

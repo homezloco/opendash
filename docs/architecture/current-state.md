@@ -7,6 +7,7 @@
 - `internal/auth` stores one Argon2id administrator and hashed opaque sessions in SQLite.
 - `internal/store` owns SQLite migrations and persistent dashboard, app, revision, and operation records. `internal/data` supplies optional demo seed rows.
 - `internal/catalog` loads local JSON, validates runtime constraints, evaluates selected risks/conflicts, allocates localhost ports, and renders Compose/environment files.
+- `internal/backup` plans declared-volume backups, creates checksummed archives through a fixed temporary Docker command, enforces retention, and reads non-destructive restore previews. `internal/recovery` exports and previews recovery inventory.
 - `internal/runtime/docker` invokes Docker/Compose for readiness, install, lifecycle, logs, uninstall preview/apply, and observation. `internal/runtime/noop` disables those capabilities.
 - `web` is a separately deployed React SPA. It uses `/api/v1` by default or compile-time mock responses when explicitly enabled.
 

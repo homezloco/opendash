@@ -252,6 +252,24 @@
         "rollbackSafe": { "type": "boolean" },
         "rollbackNotes": { "type": "string", "maxLength": 2048 }
       }
+    },
+    "backup": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["volumes"],
+      "properties": {
+        "volumes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$" }
+        },
+        "includeConfig": { "type": "boolean" },
+        "pauseContainers": { "type": "boolean" },
+        "required": { "type": "boolean" },
+        "migrationRisk": { "type": "string", "maxLength": 2048 },
+        "rollbackSafe": { "type": "boolean" }
+      }
     }
   },
   "$defs": {

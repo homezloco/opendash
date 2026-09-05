@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/opendash-project/opendash/internal/data"
 	"github.com/opendash-project/opendash/internal/diagnostics"
@@ -38,6 +39,18 @@ type AppManager interface {
 	CreateRevision(ctx context.Context, revision *models.Revision) error
 	GetLatestRevision(ctx context.Context, appID string) (*models.Revision, error)
 	ApplySuccessfulUpdate(ctx context.Context, instance *models.AppInstance, revision *models.Revision, source *models.ManifestSource, expectedCommit, expectedChecksum string) error
+}
+
+type BackupManager interface {
+	CreateBackupJob(ctx context.Context, job *models.BackupJob) error
+	UpdateBackupJob(ctx context.Context, job *models.BackupJob) error
+	CreateBackupArchive(ctx context.Context, archive *models.BackupArchive) error
+	GetBackupArchive(ctx context.Context, id string) (*models.BackupArchive, error)
+	ListBackupArchives(ctx context.Context, appID string) ([]models.BackupArchive, error)
+	DeleteBackupArchive(ctx context.Context, id string) error
+	UpsertBackupSchedule(ctx context.Context, schedule *models.BackupSchedule) error
+	GetBackupSchedule(ctx context.Context, appID string) (*models.BackupSchedule, error)
+	MarkBackupVerified(ctx context.Context, id string, verifiedAt time.Time, integrityOK bool) error
 }
 
 type SourceManager interface {

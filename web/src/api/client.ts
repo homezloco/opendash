@@ -15,6 +15,11 @@ import type {
   SourcePreview,
   SystemSummary,
   UpdatePreview,
+  BackupArchive,
+  RestorePreview,
+  VerificationResult,
+  RecoveryInventory,
+  RecoveryImportPreview,
 } from "./types";
 import {
   mockActivity,
@@ -185,4 +190,11 @@ export const api = {
   getUpdatePlan: (id: string) => request<UpdatePreview>(`/apps/${id}/update-plan`),
   applyUpdate: (id: string, body: { commitSha: string; checksum: string; confirmed: boolean; acknowledgedRisks: boolean }) =>
     request<Operation>(`/apps/${id}/update`, { method: "POST", body: JSON.stringify(body) }),
+  getBackups: (appId: string) => request<BackupArchive[]>(`/apps/${appId}/backups`),
+  createBackup: (appId: string, retentionCount = 5, retentionDays = 30) =>
+    request<BackupArchive>(`/apps/${appId}/backups`, { method: "POST", body: JSON.stringify({ retentionCount, retentionDays }) }),
+  previewRestore: (backupId: string) => request<RestorePreview>(`/backups/${backupId}/restore-preview`, { method: "POST" }),
+  verifyBackup: (backupId: string) => request<VerificationResult>(`/backups/${backupId}/verify`, { method: "POST" }),
+  exportRecovery: () => request<RecoveryInventory>("/recovery/export"),
+  previewRecoveryImport: (inventory: RecoveryInventory) => request<RecoveryImportPreview>("/recovery/import-preview", { method: "POST", body: JSON.stringify(inventory) }),
 };

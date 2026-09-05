@@ -8,6 +8,8 @@ import { ActivityPage } from "@/features/ActivityPage";
 import { SettingsPage } from "@/features/SettingsPage";
 import { SourcesPage } from "@/features/SourcesPage";
 import { AuthGate } from "@/features/AuthGate";
+import { BackupPage } from "@/features/BackupPage";
+import { RecoveryPage } from "@/features/RecoveryPage";
 
 export function App() {
   return (
@@ -22,6 +24,8 @@ export function App() {
             <Route path="sources" element={<SourcesPage />} />
             <Route path="protection" element={<ProtectionPage />} />
             <Route path="activity" element={<ActivityPage />} />
+            <Route path="backups" element={<BackupPage />} />
+            <Route path="recovery" element={<RecoveryPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route
               path="*"

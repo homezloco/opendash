@@ -21,6 +21,8 @@ const NAV_ITEMS = [
   { to: "/sources", label: "Sources", icon: <IconCatalog /> },
   { to: "/protection", label: "Protection", icon: <IconProtection /> },
   { to: "/activity", label: "Activity", icon: <IconActivity /> },
+  { to: "/backups", label: "Backups", icon: <IconProtection /> },
+  { to: "/recovery", label: "Recovery", icon: <IconProtection /> },
   { to: "/settings", label: "Settings", icon: <IconSettings /> },
 ] as const;
 

@@ -51,6 +51,7 @@ func main() {
 	h := api.NewHandlers(s, rt)
 	h.ConfigureAuth(auth.New(s.DB(), cfg.SessionLifetime), cfg.AuthEnabled, cfg.SecureCookies, cfg.SessionLifetime)
 	h.ConfigureCatalog(cfg.CatalogRoot, cfg.AppsRoot)
+	h.ConfigureBackups(cfg.BackupsRoot)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
