@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/api";
 import type { InstalledApp } from "@/api/types";
 import { StatusBadge } from "./StatusBadge";
+import { SourceTrustBadge } from "./SourceTrustBadge";
+import { UpdatePreviewDrawer } from "./UpdatePreviewDrawer";
 import { IconClose, IconExternalLink } from "./Icons";
 import styles from "./Drawer.module.css";
 
@@ -15,6 +17,7 @@ export function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
   const [operation, setOperation] = useState<{ kind: string; status: string; error?: string } | null>(null);
   const [logs, setLogs] = useState<string | null>(null);
   const [showLogs, setShowLogs] = useState(false);
+  const [showUpdate, setShowUpdate] = useState(false);
   const hasUpdate = app.version !== app.latestVersion;
 
   async function runAction(kind: string, fn: () => Promise<{ kind: string; status: string; error?: string }>) {
@@ -78,6 +81,7 @@ export function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
             <div className={styles.headerMeta}>
               <StatusBadge status={app.status} size="md" />
               <StatusBadge status={app.health} size="md" />
+              {app.trust && <SourceTrustBadge trust={app.trust} />}
             </div>
           </div>
           <button
@@ -127,6 +131,7 @@ export function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
               <ActionButton label="Stop" onClick={() => runAction("stop", () => api.stopApp(app.id))} disabled={app.status === "stopped"} />
               <ActionButton label="Restart" onClick={() => runAction("restart", () => api.restartApp(app.id))} />
               <ActionButton label="Logs" onClick={fetchLogs} />
+              <ActionButton label="Update preview" onClick={() => setShowUpdate(true)} />
             </div>
             {operation && (
               <div style={{ marginTop: "var(--space-2)" }}>
@@ -229,6 +234,9 @@ export function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
           </section>
         </div>
       </div>
+      {showUpdate && (
+        <UpdatePreviewDrawer appId={app.id} onClose={() => setShowUpdate(false)} />
+      )}
     </>
   );
 }

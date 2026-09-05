@@ -115,30 +115,33 @@ type AppStorageVolume struct {
 }
 
 type InstalledApp struct {
-	ID            string             `json:"id"`
-	Name          string             `json:"name"`
-	Icon          string             `json:"icon"`
-	Description   string             `json:"description"`
-	Status        AppStatus          `json:"status"`
-	Health        HealthStatus       `json:"health"`
-	Version       string             `json:"version"`
-	LatestVersion string             `json:"latestVersion"`
-	Category      string             `json:"category"`
-	Endpoints     []AppEndpoint      `json:"endpoints"`
-	Services      []AppService       `json:"services"`
-	Storage       []AppStorageVolume `json:"storage"`
-	UpdatedAt     time.Time          `json:"updatedAt"`
-	InstalledAt   time.Time          `json:"installedAt"`
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	Icon            string             `json:"icon"`
+	Description     string             `json:"description"`
+	Status          AppStatus          `json:"status"`
+	Health          HealthStatus       `json:"health"`
+	Version         string             `json:"version"`
+	LatestVersion   string             `json:"latestVersion"`
+	UpdateAvailable bool               `json:"updateAvailable"`
+	Trust           SourceTrust        `json:"trust,omitempty"`
+	Category        string             `json:"category"`
+	Endpoints       []AppEndpoint      `json:"endpoints"`
+	Services        []AppService       `json:"services"`
+	Storage         []AppStorageVolume `json:"storage"`
+	UpdatedAt       time.Time          `json:"updatedAt"`
+	InstalledAt     time.Time          `json:"installedAt"`
 }
 
 type CatalogApp struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Icon        string `json:"icon"`
-	Description string `json:"description"`
-	Category    string `json:"category"`
-	Version     string `json:"version"`
-	Installed   bool   `json:"installed"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Icon        string      `json:"icon"`
+	Description string      `json:"description"`
+	Category    string      `json:"category"`
+	Version     string      `json:"version"`
+	Installed   bool        `json:"installed"`
+	Trust       SourceTrust `json:"trust,omitempty"`
 }
 
 type CatalogAppDetail struct {
@@ -153,6 +156,7 @@ type CatalogAppDetail struct {
 	Source      string               `json:"source,omitempty"`
 	Maintainer  string               `json:"maintainer,omitempty"`
 	License     string               `json:"license,omitempty"`
+	Trust       SourceTrust          `json:"trust,omitempty"`
 	Compose     ManifestCompose      `json:"compose"`
 	Endpoints   []ManifestEndpoint   `json:"endpoints,omitempty"`
 	Storage     []ManifestStorage    `json:"storage,omitempty"`
@@ -207,6 +211,15 @@ type Manifest struct {
 	Secrets     []ManifestSecret     `json:"secrets,omitempty"`
 	Config      []ManifestConfig     `json:"config,omitempty"`
 	Permissions []ManifestPermission `json:"permissions,omitempty"`
+	Upgrade     *ManifestUpgrade     `json:"upgrade,omitempty"`
+}
+
+// ManifestUpgrade contains declarative update safety disclosures. It never
+// executes migration hooks.
+type ManifestUpgrade struct {
+	MigrationRisk string `json:"migrationRisk,omitempty"`
+	RollbackSafe  bool   `json:"rollbackSafe,omitempty"`
+	RollbackNotes string `json:"rollbackNotes,omitempty"`
 }
 
 type ManifestCompose struct {
@@ -363,6 +376,7 @@ type OperationKind string
 
 const (
 	OperationInstall   OperationKind = "install"
+	OperationUpdate    OperationKind = "update"
 	OperationStart     OperationKind = "start"
 	OperationStop      OperationKind = "stop"
 	OperationRestart   OperationKind = "restart"
@@ -392,6 +406,8 @@ const (
 type AppInstance struct {
 	ID          string             `json:"id"`
 	CatalogID   string             `json:"catalogId"`
+	SourceID    string             `json:"sourceId,omitempty"`
+	Trust       SourceTrust        `json:"trust,omitempty"`
 	Name        string             `json:"name"`
 	Version     string             `json:"version"`
 	ProjectName string             `json:"projectName"`

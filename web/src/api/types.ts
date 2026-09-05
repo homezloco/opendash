@@ -74,6 +74,8 @@ export interface InstalledApp {
   health: HealthStatus;
   version: string;
   latestVersion: string;
+  updateAvailable?: boolean;
+  trust?: SourceTrust;
   category: string;
   endpoints: AppEndpoint[];
   services: AppService[];
@@ -90,6 +92,7 @@ export interface CatalogApp {
   category: string;
   version: string;
   installed: boolean;
+  trust?: SourceTrust;
 }
 
 export interface CatalogAppDetail extends CatalogApp {
@@ -98,6 +101,7 @@ export interface CatalogAppDetail extends CatalogApp {
   source?: string;
   maintainer?: string;
   license?: string;
+  trust?: SourceTrust;
   compose: ManifestCompose;
   endpoints?: ManifestEndpoint[];
   storage?: ManifestStorage[];
@@ -264,4 +268,98 @@ export interface ActivityEvent {
   description: string;
   timestamp: string;
   severity: "info" | "warning" | "error" | "success";
+}
+
+export type SourceTrust =
+  | "official"
+  | "reviewed"
+  | "user-trusted"
+  | "changed"
+  | "untrusted";
+
+export interface ManifestSource {
+  id: string;
+  sourceUrl: string;
+  owner: string;
+  repo: string;
+  path: string;
+  ref: string;
+  commitSha: string;
+  checksum: string;
+  trust: SourceTrust;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SourcePreview {
+  sourceUrl: string;
+  owner: string;
+  repo: string;
+  path: string;
+  ref: string;
+  commitSha: string;
+  checksum: string;
+  trust: SourceTrust;
+  manifest: CatalogAppDetail;
+}
+
+export interface SourceListItem {
+  id: string;
+  sourceUrl: string;
+  owner: string;
+  repo: string;
+  path: string;
+  ref: string;
+  commitSha: string;
+  checksum: string;
+  trust: SourceTrust;
+  appId: string;
+  name: string;
+  version: string;
+  updatedAt: string;
+}
+
+export interface PermissionDiff {
+  kind: string;
+  description?: string;
+  required: boolean;
+  state: "added" | "removed" | "changed" | "unchanged";
+}
+
+export interface UpdateChange {
+  kind: string;
+  target: string;
+  before?: string;
+  after?: string;
+  summary: string;
+}
+
+export interface UpdatePreview {
+  appId: string;
+  currentVersion: string;
+  newVersion: string;
+  currentCommit: string;
+  newCommit: string;
+  newChecksum: string;
+  currentManifest: CatalogAppDetail;
+  newManifest: CatalogAppDetail;
+  images: string[];
+  addedImages: string[];
+  removedImages: string[];
+  ports: PlannedPort[];
+  addedPorts: PlannedPort[];
+  removedPorts: PlannedPort[];
+  volumes: PlannedVolume[];
+  addedVolumes: PlannedVolume[];
+  removedVolumes: PlannedVolume[];
+  environment: PlannedConfig[];
+  permissions: ManifestPermission[];
+  permissionDiff: PermissionDiff[];
+  risks: Risk[];
+  changes: UpdateChange[];
+  canUpdate: boolean;
+  blockedReasons: string[];
+  migrationDisclosures: string[];
+  rollbackDisclosures: string[];
+  requiresAcknowledgement: boolean;
 }

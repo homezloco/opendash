@@ -3,6 +3,7 @@
 /cmd/opendash/opendash
 *.exe
 /web/dist
+*.tsbuildinfo
 
 # Go
 vendor/

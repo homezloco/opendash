@@ -503,6 +503,133 @@ paths:
                 items:
                   $ref: "#/components/schemas/ActivityEvent"
 
+  /sources:
+    get:
+      summary: List GitHub manifest sources
+      operationId: listSources
+      responses:
+        "200":
+          description: List of manifest sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SourceListItem"
+    post:
+      summary: Add a previewed and confirmed GitHub source
+      operationId: addSource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSourceRequest"
+      responses:
+        "201":
+          description: Source created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManifestSource"
+        "400":
+          description: Invalid or unconfirmed source
+
+  /sources/preview:
+    post:
+      summary: Preview a GitHub manifest source without storing it
+      operationId: previewSource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SourcePreviewRequest"
+      responses:
+        "200":
+          description: Source preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourcePreview"
+        "400":
+          description: Invalid URL or manifest
+
+  /sources/{id}:
+    delete:
+      summary: Remove a manifest source
+      operationId: removeSource
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Source removed
+        "404":
+          description: Source not found
+        "409":
+          description: Source is in use by an installed app
+
+  /apps/{id}/update-plan:
+    get:
+      summary: Preview a safe update for a source-installed app
+      operationId: getAppUpdatePlan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Update preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatePreview"
+        "400":
+          description: App is not from a source or preview failed
+        "404":
+          description: App not found
+
+  /apps/{id}/update:
+    post:
+      summary: Apply an exact reviewed source update
+      description: Requires an authenticated session, X-CSRF-Token, exact preview commit/checksum, confirmation, and risk acknowledgement when the preview requires it.
+      operationId: applyAppUpdate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [commitSha, checksum, confirmed]
+              properties:
+                commitSha: { type: string }
+                checksum: { type: string }
+                confirmed: { type: boolean }
+                acknowledgedRisks: { type: boolean }
+      responses:
+        "202":
+          description: Update operation accepted; poll the operation endpoint
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Operation" }
+        "400": { description: Confirmation or risk acknowledgement missing }
+        "409": { description: Stale preview, blocked update, or concurrent operation }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -685,6 +812,10 @@ components:
           type: string
         latestVersion:
           type: string
+        updateAvailable:
+          type: boolean
+        trust:
+          $ref: "#/components/schemas/SourceTrust"
         category:
           type: string
         endpoints:
@@ -731,6 +862,8 @@ components:
           type: string
         installed:
           type: boolean
+        trust:
+          $ref: "#/components/schemas/SourceTrust"
 
     ProtectionOverview:
       type: object
@@ -1234,3 +1367,293 @@ components:
       properties:
         output:
           type: string
+
+    SourceTrust:
+      type: string
+      enum: [official, reviewed, user-trusted, changed, untrusted]
+
+    SourcePreviewRequest:
+      type: object
+      required: [url]
+      additionalProperties: false
+      properties:
+        url:
+          type: string
+          format: uri
+
+    AddSourceRequest:
+      type: object
+      required: [url, confirmed]
+      additionalProperties: false
+      properties:
+        url:
+          type: string
+          format: uri
+        confirmed:
+          type: boolean
+
+    ManifestSource:
+      type: object
+      required:
+        - id
+        - sourceUrl
+        - owner
+        - repo
+        - path
+        - ref
+        - commitSha
+        - checksum
+        - trust
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        sourceUrl:
+          type: string
+        owner:
+          type: string
+        repo:
+          type: string
+        path:
+          type: string
+        ref:
+          type: string
+        commitSha:
+          type: string
+        checksum:
+          type: string
+        trust:
+          $ref: "#/components/schemas/SourceTrust"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    SourceListItem:
+      type: object
+      required:
+        - id
+        - sourceUrl
+        - owner
+        - repo
+        - path
+        - ref
+        - commitSha
+        - checksum
+        - trust
+        - appId
+        - name
+        - version
+        - updatedAt
+      properties:
+        id:
+          type: string
+        sourceUrl:
+          type: string
+        owner:
+          type: string
+        repo:
+          type: string
+        path:
+          type: string
+        ref:
+          type: string
+        commitSha:
+          type: string
+        checksum:
+          type: string
+        trust:
+          $ref: "#/components/schemas/SourceTrust"
+        appId:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+
+    SourcePreview:
+      type: object
+      required:
+        - sourceUrl
+        - owner
+        - repo
+        - path
+        - ref
+        - commitSha
+        - checksum
+        - trust
+        - manifest
+      properties:
+        sourceUrl:
+          type: string
+        owner:
+          type: string
+        repo:
+          type: string
+        path:
+          type: string
+        ref:
+          type: string
+        commitSha:
+          type: string
+        checksum:
+          type: string
+        trust:
+          $ref: "#/components/schemas/SourceTrust"
+        manifest:
+          $ref: "#/components/schemas/CatalogAppDetail"
+
+    UpdateChange:
+      type: object
+      required: [kind, target, summary]
+      properties:
+        kind:
+          type: string
+        target:
+          type: string
+        before:
+          type: string
+        after:
+          type: string
+        summary:
+          type: string
+
+    PermissionDiff:
+      type: object
+      required: [kind, required, state]
+      properties:
+        kind:
+          type: string
+        description:
+          type: string
+        required:
+          type: boolean
+        state:
+          type: string
+          enum: [added, removed, changed, unchanged]
+
+    UpdatePreview:
+      type: object
+      required:
+        - appId
+        - currentVersion
+        - newVersion
+        - currentCommit
+        - newCommit
+        - newChecksum
+        - currentManifest
+        - newManifest
+        - images
+        - addedImages
+        - removedImages
+        - ports
+        - addedPorts
+        - removedPorts
+        - volumes
+        - addedVolumes
+        - removedVolumes
+        - environment
+        - permissions
+        - permissionDiff
+        - risks
+        - changes
+        - canUpdate
+        - blockedReasons
+        - migrationDisclosures
+        - rollbackDisclosures
+        - requiresAcknowledgement
+      properties:
+        appId:
+          type: string
+        currentVersion:
+          type: string
+        newVersion:
+          type: string
+        currentCommit:
+          type: string
+        newCommit:
+          type: string
+        newChecksum:
+          type: string
+        currentManifest:
+          $ref: "#/components/schemas/CatalogAppDetail"
+        newManifest:
+          $ref: "#/components/schemas/CatalogAppDetail"
+        images:
+          type: array
+          items:
+            type: string
+        addedImages:
+          type: array
+          items:
+            type: string
+        removedImages:
+          type: array
+          items:
+            type: string
+        ports:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedPort"
+        addedPorts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedPort"
+        removedPorts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedPort"
+        volumes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedVolume"
+        addedVolumes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedVolume"
+        removedVolumes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedVolume"
+        environment:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlannedConfig"
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ManifestPermission"
+        permissionDiff:
+          type: array
+          items:
+            $ref: "#/components/schemas/PermissionDiff"
+        risks:
+          type: array
+          items:
+            $ref: "#/components/schemas/Risk"
+        changes:
+          type: array
+          items:
+            $ref: "#/components/schemas/UpdateChange"
+        canUpdate:
+          type: boolean
+        blockedReasons:
+          type: array
+          items:
+            type: string
+        migrationDisclosures:
+          type: array
+          items:
+            type: string
+        rollbackDisclosures:
+          type: array
+          items:
+            type: string
+        requiresAcknowledgement:
+          type: boolean

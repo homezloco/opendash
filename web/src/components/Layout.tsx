@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Overview", icon: <IconOverview /> },
   { to: "/apps", label: "Apps", icon: <IconApps /> },
   { to: "/catalog", label: "Catalog", icon: <IconCatalog /> },
+  { to: "/sources", label: "Sources", icon: <IconCatalog /> },
   { to: "/protection", label: "Protection", icon: <IconProtection /> },
   { to: "/activity", label: "Activity", icon: <IconActivity /> },
   { to: "/settings", label: "Settings", icon: <IconSettings /> },

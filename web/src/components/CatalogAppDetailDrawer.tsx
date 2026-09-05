@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/api";
 import type { CatalogAppDetail, InstallPlan, Operation } from "@/api/types";
 import { useAsync } from "@/hooks/use-async";
+import { SourceTrustBadge } from "./SourceTrustBadge";
 import { IconClose } from "./Icons";
 import styles from "./Drawer.module.css";
 
@@ -66,7 +67,9 @@ export function CatalogAppDetailDrawer({ app, onClose }: Props) {
           </div>
           <div className={styles.headerBody}>
             <div className={styles.headerTitle}>{app.name}</div>
-            <div className={styles.headerMeta}>v{app.version}</div>
+            <div className={styles.headerMeta}>
+              v{app.version} {app.trust && <SourceTrustBadge trust={app.trust} />}
+            </div>
           </div>
           <button ref={closeRef} className={styles.closeButton} onClick={onClose} aria-label="Close catalog details">
             <IconClose />

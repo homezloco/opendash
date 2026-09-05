@@ -38,6 +38,30 @@ Always review the uninstall plan. It lists Compose-derived containers, images, n
 
 Retention prevents automatic volume deletion, but it is not a backup, restore workflow, or recovery guarantee. Record the project/volume names before uninstall and manage retained resources manually with Docker. OpenDash has no reinstall/adopt or secure-delete workflow.
 
+## GitHub manifest sources
+
+The **Sources** page lets you add an OpenDash manifest hosted in a public GitHub repository. Paste the full `https://github.com/owner/repo/blob/ref/path/to/app.json` URL. OpenDash:
+
+- accepts only `https://github.com` `/blob` or `/tree` URLs pointing to a `.json` manifest;
+- rejects credentials, fragments, query strings, non-GitHub hosts, ambiguous paths, and private/localhost redirects;
+- resolves the branch or tag to an immutable commit SHA;
+- validates the manifest, stores its exact content in SQLite, and computes a checksum;
+- marks direct sources as **untrusted** until you preview and explicitly confirm them, after which they become **user-trusted**.
+
+An optional `OPENDASH_GITHUB_TOKEN` environment variable may be set server-side for higher rate limits. No token is ever accepted from the browser or stored in the database.
+
+## Update previews
+
+For apps installed from a GitHub source, the **Update preview** action resolves the latest commit at the same ref and compares it to the pinned version. The preview shows:
+
+- manifest, configuration, Compose, image, port, and volume changes;
+- a permission diff with added/removed/changed permissions;
+- migration and rollback disclosures.
+
+A moving branch/tag resolving to a new commit during preview is expected update discovery and does not lower trust. Different content returned for the same immutable commit is integrity drift: the source becomes **changed** and update is blocked.
+
+To apply, confirm the exact preview commit and checksum. Additional acknowledgement is required for increased permissions, removed volumes, migration risk, or rollback that is not guaranteed. OpenDash preserves the prior generated revision, app ID, Compose project, configuration, and retained data volumes. It persists the new revision and source snapshot only after a health-gated Compose start succeeds. If startup fails it re-applies the prior Compose config only when the new manifest declares `upgrade.rollbackSafe: true`; this never rolls back database or volume contents. Declarative `upgrade.migrationRisk`, `upgrade.rollbackSafe`, and `upgrade.rollbackNotes` metadata is supported, but arbitrary hooks are not.
+
 ## Feature boundaries
 
-Remote/GitHub sources, application updates and update diffs, backups, restore verification, recovery automation, image-signature checks, notifications, and continuous monitoring are not implemented. Protection/backup-looking rows in demo or mock data are illustrative dashboard data only.
+Remote GitHub sources support preview, add, list, remove, and health-gated update application. Backups, database rollback, restore verification, recovery automation, image-signature checks, notifications, and continuous monitoring are not implemented. Protection/backup-looking rows in demo or mock data are illustrative dashboard data only.

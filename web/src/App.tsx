@@ -6,6 +6,7 @@ import { CatalogPage } from "@/features/CatalogPage";
 import { ProtectionPage } from "@/features/ProtectionPage";
 import { ActivityPage } from "@/features/ActivityPage";
 import { SettingsPage } from "@/features/SettingsPage";
+import { SourcesPage } from "@/features/SourcesPage";
 import { AuthGate } from "@/features/AuthGate";
 
 export function App() {
@@ -18,6 +19,7 @@ export function App() {
             <Route path="apps" element={<AppsPage />} />
             <Route path="apps/:id" element={<AppsPage />} />
             <Route path="catalog" element={<CatalogPage />} />
+            <Route path="sources" element={<SourcesPage />} />
             <Route path="protection" element={<ProtectionPage />} />
             <Route path="activity" element={<ActivityPage />} />
             <Route path="settings" element={<SettingsPage />} />

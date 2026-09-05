@@ -26,7 +26,7 @@ func (h *Handlers) CatalogAppDetail(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, "missing_id", "app id is required")
 		return
 	}
-	m, err := catalog.LoadManifest(catalogManifestPath(h.catalogRoot, id))
+	m, sourceID, err := h.loadManifestByID(r.Context(), id)
 	if err != nil {
 		if os.IsNotExist(err) {
 			RespondError(w, http.StatusNotFound, "not_found", "catalog app not found")
@@ -36,7 +36,16 @@ func (h *Handlers) CatalogAppDetail(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusInternalServerError, "catalog_error", err.Error())
 		return
 	}
-	RespondJSON(w, http.StatusOK, toCatalogAppDetail(m))
+	trust := models.SourceReviewed
+	if sourceID != "" && h.sourceService != nil {
+		if sm, ok := h.store.(store.SourceManager); ok {
+			src, err := sm.GetManifestSource(r.Context(), sourceID)
+			if err == nil {
+				trust = src.Trust
+			}
+		}
+	}
+	RespondJSON(w, http.StatusOK, toCatalogAppDetailWithTrust(m, trust))
 }
 
 func (h *Handlers) InstallPlan(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +54,7 @@ func (h *Handlers) InstallPlan(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, "missing_id", "app id is required")
 		return
 	}
-	m, err := catalog.LoadManifest(catalogManifestPath(h.catalogRoot, id))
+	m, _, err := h.loadManifestByID(r.Context(), id)
 	if err != nil {
 		RespondError(w, http.StatusNotFound, "not_found", "catalog app not found")
 		return
@@ -80,7 +89,7 @@ func (h *Handlers) InstallApp(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusNotImplemented, "not_implemented", "app management not available")
 		return
 	}
-	m, err := catalog.LoadManifest(catalogManifestPath(h.catalogRoot, id))
+	m, sourceID, err := h.loadManifestByID(r.Context(), id)
 	if err != nil {
 		RespondError(w, http.StatusNotFound, "not_found", "catalog app not found")
 		return
@@ -131,7 +140,8 @@ func (h *Handlers) InstallApp(w http.ResponseWriter, r *http.Request) {
 	appID := uuid.NewString()
 	instance := &models.AppInstance{
 		ID:          appID,
-		CatalogID:   m.ID,
+		CatalogID:   id,
+		SourceID:    sourceID,
 		Name:        m.Name,
 		Version:     m.Version,
 		ProjectName: plan.ProjectName,

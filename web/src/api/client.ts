@@ -8,9 +8,13 @@ import type {
   ComposePreview,
   InstalledApp,
   InstallPlan,
+  ManifestSource,
   Operation,
   ProtectionOverview,
+  SourceListItem,
+  SourcePreview,
   SystemSummary,
+  UpdatePreview,
 } from "./types";
 import {
   mockActivity,
@@ -165,4 +169,20 @@ export const api = {
     request<Operation>(`/apps/${id}/uninstall`, { method: "POST" }),
   getProtection: () => request<ProtectionOverview>("/protection"),
   getActivity: () => request<ActivityEvent[]>("/activity"),
+  getSources: () => request<SourceListItem[]>("/sources"),
+  previewSource: (url: string) =>
+    request<SourcePreview>("/sources/preview", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    }),
+  addSource: (url: string, confirmed: boolean) =>
+    request<ManifestSource>("/sources", {
+      method: "POST",
+      body: JSON.stringify({ url, confirmed }),
+    }),
+  removeSource: (id: string) =>
+    request<void>(`/sources/${id}`, { method: "DELETE" }),
+  getUpdatePlan: (id: string) => request<UpdatePreview>(`/apps/${id}/update-plan`),
+  applyUpdate: (id: string, body: { commitSha: string; checksum: string; confirmed: boolean; acknowledgedRisks: boolean }) =>
+    request<Operation>(`/apps/${id}/update`, { method: "POST", body: JSON.stringify(body) }),
 };

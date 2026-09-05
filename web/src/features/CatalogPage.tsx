@@ -4,6 +4,7 @@ import type { CatalogAppDetail } from "@/api/types";
 import { useAsync } from "@/hooks/use-async";
 import { DataGuard } from "@/components/LoadingState";
 import { CatalogAppDetailDrawer } from "@/components/CatalogAppDetailDrawer";
+import { SourceTrustBadge } from "@/components/SourceTrustBadge";
 import styles from "./CatalogPage.module.css";
 
 export function CatalogPage() {
@@ -46,6 +47,7 @@ export function CatalogPage() {
               <div className={styles.cardDesc}>{app.description}</div>
               <div className={styles.cardFooter}>
                 <span className={styles.cardVersion}>v{app.version}</span>
+                {app.trust && <SourceTrustBadge trust={app.trust} />}
                 {app.installed && (
                   <span className={styles.installedBadge}>Installed</span>
                 )}

@@ -239,14 +239,18 @@
             "type": "string",
             "enum": ["network", "privileged", "capability", "device", "host-path", "ipc", "pid", "root-user"]
           },
-          "description": {
-            "type": "string",
-            "maxLength": 512
-          },
-          "required": {
-            "type": "boolean"
-          }
+          "description": { "type": "string", "maxLength": 512 },
+          "required": { "type": "boolean" }
         }
+      }
+    },
+    "upgrade": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "migrationRisk": { "type": "string", "maxLength": 2048 },
+        "rollbackSafe": { "type": "boolean" },
+        "rollbackNotes": { "type": "string", "maxLength": 2048 }
       }
     }
   },

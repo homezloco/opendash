@@ -37,6 +37,17 @@ type AppManager interface {
 
 	CreateRevision(ctx context.Context, revision *models.Revision) error
 	GetLatestRevision(ctx context.Context, appID string) (*models.Revision, error)
+	ApplySuccessfulUpdate(ctx context.Context, instance *models.AppInstance, revision *models.Revision, source *models.ManifestSource, expectedCommit, expectedChecksum string) error
+}
+
+type SourceManager interface {
+	CreateManifestSource(ctx context.Context, source *models.ManifestSource) error
+	GetManifestSource(ctx context.Context, id string) (*models.ManifestSource, error)
+	GetManifestSourceByURL(ctx context.Context, url string) (*models.ManifestSource, error)
+	ListManifestSources(ctx context.Context) ([]models.ManifestSource, error)
+	DeleteManifestSource(ctx context.Context, id string) error
+	UpdateManifestSourceTrust(ctx context.Context, id string, trust models.SourceTrust) error
+	UpdateManifestSourceManifest(ctx context.Context, source *models.ManifestSource) error
 }
 
 type MemoryStore struct{}
@@ -153,4 +164,36 @@ func (s *MemoryStore) CreateRevision(ctx context.Context, revision *models.Revis
 
 func (s *MemoryStore) GetLatestRevision(ctx context.Context, appID string) (*models.Revision, error) {
 	return nil, fmt.Errorf("revision not found: %s", appID)
+}
+
+func (s *MemoryStore) ApplySuccessfulUpdate(ctx context.Context, instance *models.AppInstance, revision *models.Revision, source *models.ManifestSource, expectedCommit, expectedChecksum string) error {
+	return fmt.Errorf("not implemented in memory store")
+}
+
+func (s *MemoryStore) CreateManifestSource(ctx context.Context, source *models.ManifestSource) error {
+	return fmt.Errorf("not implemented in memory store")
+}
+
+func (s *MemoryStore) GetManifestSource(ctx context.Context, id string) (*models.ManifestSource, error) {
+	return nil, fmt.Errorf("source not found: %s", id)
+}
+
+func (s *MemoryStore) GetManifestSourceByURL(ctx context.Context, url string) (*models.ManifestSource, error) {
+	return nil, fmt.Errorf("source not found")
+}
+
+func (s *MemoryStore) ListManifestSources(ctx context.Context) ([]models.ManifestSource, error) {
+	return nil, nil
+}
+
+func (s *MemoryStore) DeleteManifestSource(ctx context.Context, id string) error {
+	return fmt.Errorf("not implemented in memory store")
+}
+
+func (s *MemoryStore) UpdateManifestSourceTrust(ctx context.Context, id string, trust models.SourceTrust) error {
+	return fmt.Errorf("not implemented in memory store")
+}
+
+func (s *MemoryStore) UpdateManifestSourceManifest(ctx context.Context, source *models.ManifestSource) error {
+	return fmt.Errorf("not implemented in memory store")
 }

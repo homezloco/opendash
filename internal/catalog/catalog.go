@@ -374,5 +374,3 @@ func urlPort(raw string) int {
 func volumeName(appID, name string) string {
 	return projectNamePrefix + appID + "-" + strings.ToLower(name)
 }
-
-

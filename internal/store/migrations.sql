@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS operations (
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
 );
+CREATE UNIQUE INDEX IF NOT EXISTS idx_operations_one_active_per_app
+    ON operations(app_id) WHERE status IN ('pending', 'running');
+
 CREATE TABLE IF NOT EXISTS revisions (
     id TEXT PRIMARY KEY,
     app_id TEXT NOT NULL REFERENCES app_instances(id) ON DELETE CASCADE,
@@ -40,3 +43,22 @@ CREATE TABLE IF NOT EXISTS revisions (
     created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS operations_app_id ON operations(app_id);
+
+-- migration:3
+CREATE TABLE IF NOT EXISTS manifest_sources (
+    id TEXT PRIMARY KEY,
+    source_url TEXT NOT NULL UNIQUE,
+    owner TEXT NOT NULL,
+    repo TEXT NOT NULL,
+    path TEXT NOT NULL,
+    ref TEXT NOT NULL,
+    commit_sha TEXT NOT NULL,
+    manifest_json BLOB NOT NULL,
+    checksum TEXT NOT NULL,
+    trust TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS manifest_sources_url ON manifest_sources(source_url);
+CREATE INDEX IF NOT EXISTS manifest_sources_owner_repo ON manifest_sources(owner, repo);
+ALTER TABLE app_instances ADD COLUMN source_id TEXT REFERENCES manifest_sources(id) ON DELETE SET NULL;

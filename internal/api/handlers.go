@@ -15,37 +15,47 @@ import (
 	"github.com/opendash-project/opendash/internal/catalog"
 	"github.com/opendash-project/opendash/internal/models"
 	"github.com/opendash-project/opendash/internal/runtime"
+	"github.com/opendash-project/opendash/internal/sources"
 	"github.com/opendash-project/opendash/internal/store"
 )
 
 type Handlers struct {
-	store           store.Store
-	runtime         runtime.Runtime
-	auth            *auth.Service
-	authEnabled     bool
-	secureCookies   bool
-	sessionLifetime time.Duration
-	limiter         *loginLimiter
-	dataSource      string
-	catalogRoot     string
-	appsRoot        string
-	baseCtx         context.Context
-	wg              sync.WaitGroup
+	store               store.Store
+	runtime             runtime.Runtime
+	auth                *auth.Service
+	authEnabled         bool
+	secureCookies       bool
+	sessionLifetime     time.Duration
+	limiter             *loginLimiter
+	dataSource          string
+	catalogRoot         string
+	appsRoot            string
+	baseCtx             context.Context
+	wg                  sync.WaitGroup
+	sourceService       *sources.Service
+	updateHealthTimeout time.Duration
+	updateHealthPoll    time.Duration
 }
 
-func NewHandlers(store store.Store, runtime runtime.Runtime) *Handlers {
+func NewHandlers(st store.Store, runtime runtime.Runtime) *Handlers {
 	source := "demo"
-	if provider, ok := store.(interface{ DataSource() string }); ok {
+	if provider, ok := st.(interface{ DataSource() string }); ok {
 		source = provider.DataSource()
 	}
-	return &Handlers{
-		store:       store,
-		runtime:     runtime,
-		dataSource:  source,
-		catalogRoot: "./catalog",
-		appsRoot:    "./data/apps",
-		baseCtx:     context.Background(),
+	h := &Handlers{
+		store:               st,
+		runtime:             runtime,
+		dataSource:          source,
+		catalogRoot:         "./catalog",
+		appsRoot:            "./data/apps",
+		baseCtx:             context.Background(),
+		updateHealthTimeout: 60 * time.Second,
+		updateHealthPoll:    time.Second,
 	}
+	if sm, ok := st.(store.SourceManager); ok {
+		h.sourceService = sources.NewService(sm, nil, h.appsRoot)
+	}
+	return h
 }
 
 func (h *Handlers) ConfigureCatalog(catalogRoot, appsRoot string) {
@@ -54,6 +64,9 @@ func (h *Handlers) ConfigureCatalog(catalogRoot, appsRoot string) {
 	}
 	if appsRoot != "" {
 		h.appsRoot = appsRoot
+	}
+	if sm, ok := h.store.(store.SourceManager); ok {
+		h.sourceService = sources.NewService(sm, nil, h.appsRoot)
 	}
 }
 
@@ -152,17 +165,17 @@ func (h *Handlers) Catalog(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) listCatalog(ctx context.Context) ([]models.CatalogApp, error) {
 	idx, err := catalog.LoadIndex(h.catalogRoot)
-	if err == nil {
-		installed := make(map[string]bool)
-		if manager, ok := h.store.(store.AppManager); ok {
-			instances, err := manager.ListAppInstances(ctx)
-			if err == nil {
-				for _, inst := range instances {
-					installed[inst.CatalogID] = true
-				}
+	var apps []models.CatalogApp
+	installed := make(map[string]bool)
+	if manager, ok := h.store.(store.AppManager); ok {
+		instances, err := manager.ListAppInstances(ctx)
+		if err == nil {
+			for _, inst := range instances {
+				installed[inst.CatalogID] = true
 			}
 		}
-		apps := make([]models.CatalogApp, 0, len(idx.Apps))
+	}
+	if err == nil {
 		for _, entry := range idx.Apps {
 			apps = append(apps, models.CatalogApp{
 				ID:          entry.ID,
@@ -172,11 +185,31 @@ func (h *Handlers) listCatalog(ctx context.Context) ([]models.CatalogApp, error)
 				Category:    entry.Category,
 				Version:     entry.Version,
 				Installed:   installed[entry.ID],
+				Trust:       models.SourceReviewed,
 			})
 		}
-		return apps, nil
+	} else {
+		apps, _ = h.store.ListCatalog(ctx)
 	}
-	return h.store.ListCatalog(ctx)
+
+	if h.sourceService != nil {
+		sources, err := h.sourceService.List(ctx)
+		if err == nil {
+			for _, src := range sources {
+				apps = append(apps, models.CatalogApp{
+					ID:          src.ID,
+					Name:        src.Name,
+					Icon:        "",
+					Description: "",
+					Category:    "",
+					Version:     src.Version,
+					Installed:   installed[src.ID],
+					Trust:       src.Trust,
+				})
+			}
+		}
+	}
+	return apps, nil
 }
 
 func (h *Handlers) Protection(w http.ResponseWriter, r *http.Request) {

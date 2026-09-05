@@ -209,7 +209,7 @@ func (s *SQLiteStore) ListApps(ctx context.Context) ([]models.InstalledApp, erro
 	}
 	apps := make([]models.InstalledApp, 0, len(instances))
 	for _, inst := range instances {
-		apps = append(apps, s.instanceToInstalledApp(inst))
+		apps = append(apps, s.instanceToInstalledApp(ctx, inst))
 	}
 	return apps, nil
 }
@@ -239,11 +239,18 @@ func (s *SQLiteStore) GetApp(ctx context.Context, id string) (*models.InstalledA
 		}
 		return nil, fmt.Errorf("app not found: %s", id)
 	}
-	app := s.instanceToInstalledApp(*inst)
+	app := s.instanceToInstalledApp(ctx, *inst)
 	return &app, nil
 }
 
-func (s *SQLiteStore) instanceToInstalledApp(inst models.AppInstance) models.InstalledApp {
+func (s *SQLiteStore) instanceToInstalledApp(ctx context.Context, inst models.AppInstance) models.InstalledApp {
+	trust := models.SourceTrust("")
+	if inst.SourceID != "" {
+		src, err := s.GetManifestSource(ctx, inst.SourceID)
+		if err == nil {
+			trust = src.Trust
+		}
+	}
 	return models.InstalledApp{
 		ID:            inst.ID,
 		Name:          inst.Name,
@@ -253,6 +260,7 @@ func (s *SQLiteStore) instanceToInstalledApp(inst models.AppInstance) models.Ins
 		Health:        inst.Health,
 		Version:       inst.Version,
 		LatestVersion: inst.Version,
+		Trust:         trust,
 		Category:      "",
 		Endpoints:     inst.Endpoints,
 		Services:      nil,
@@ -290,28 +298,29 @@ func (s *SQLiteStore) CreateAppInstance(ctx context.Context, instance *models.Ap
 		return err
 	}
 	now := time.Now().Unix()
+	srcID := sql.NullString{String: instance.SourceID, Valid: instance.SourceID != ""}
 	_, err = s.db.ExecContext(ctx,
-		`INSERT INTO app_instances(id,catalog_id,name,version,project_name,install_path,compose_path,status,health,endpoints_json,storage_json,created_at,updated_at)
-		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-		instance.ID, instance.CatalogID, instance.Name, instance.Version, instance.ProjectName, instance.InstallPath, instance.ComposePath, instance.Status, instance.Health, endpoints, storage, now, now)
+		`INSERT INTO app_instances(id,catalog_id,source_id,name,version,project_name,install_path,compose_path,status,health,endpoints_json,storage_json,created_at,updated_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		instance.ID, instance.CatalogID, srcID, instance.Name, instance.Version, instance.ProjectName, instance.InstallPath, instance.ComposePath, instance.Status, instance.Health, endpoints, storage, now, now)
 	return err
 }
 
 func (s *SQLiteStore) GetAppInstance(ctx context.Context, id string) (*models.AppInstance, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id,catalog_id,name,version,project_name,install_path,compose_path,status,health,endpoints_json,storage_json,created_at,updated_at FROM app_instances WHERE id=?`, id)
+		`SELECT id,catalog_id,source_id,name,version,project_name,install_path,compose_path,status,health,endpoints_json,storage_json,created_at,updated_at FROM app_instances WHERE id=?`, id)
 	return s.scanAppInstance(row)
 }
 
 func (s *SQLiteStore) GetAppInstanceByCatalogID(ctx context.Context, catalogID string) (*models.AppInstance, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id,catalog_id,name,version,project_name,install_path,compose_path,status,health,endpoints_json,storage_json,created_at,updated_at FROM app_instances WHERE catalog_id=?`, catalogID)
+		`SELECT id,catalog_id,source_id,name,version,project_name,install_path,compose_path,status,health,endpoints_json,storage_json,created_at,updated_at FROM app_instances WHERE catalog_id=?`, catalogID)
 	return s.scanAppInstance(row)
 }
 
 func (s *SQLiteStore) ListAppInstances(ctx context.Context) ([]models.AppInstance, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id,catalog_id,name,version,project_name,install_path,compose_path,status,health,endpoints_json,storage_json,created_at,updated_at FROM app_instances ORDER BY name`)
+		`SELECT id,catalog_id,source_id,name,version,project_name,install_path,compose_path,status,health,endpoints_json,storage_json,created_at,updated_at FROM app_instances ORDER BY name`)
 	if err != nil {
 		return nil, err
 	}
@@ -329,9 +338,13 @@ func (s *SQLiteStore) ListAppInstances(ctx context.Context) ([]models.AppInstanc
 
 func (s *SQLiteStore) scanAppInstance(scanner interface{ Scan(dest ...any) error }) (*models.AppInstance, error) {
 	var inst models.AppInstance
+	var sourceID sql.NullString
 	var endpointsJSON, storageJSON []byte
 	var createdAt, updatedAt int64
-	err := scanner.Scan(&inst.ID, &inst.CatalogID, &inst.Name, &inst.Version, &inst.ProjectName, &inst.InstallPath, &inst.ComposePath, &inst.Status, &inst.Health, &endpointsJSON, &storageJSON, &createdAt, &updatedAt)
+	err := scanner.Scan(&inst.ID, &inst.CatalogID, &sourceID, &inst.Name, &inst.Version, &inst.ProjectName, &inst.InstallPath, &inst.ComposePath, &inst.Status, &inst.Health, &endpointsJSON, &storageJSON, &createdAt, &updatedAt)
+	if sourceID.Valid {
+		inst.SourceID = sourceID.String
+	}
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("app instance not found: %s", inst.ID)
@@ -502,6 +515,36 @@ func (s *SQLiteStore) CreateRevision(ctx context.Context, revision *models.Revis
 	return err
 }
 
+func (s *SQLiteStore) ApplySuccessfulUpdate(ctx context.Context, instance *models.AppInstance, revision *models.Revision, source *models.ManifestSource, expectedCommit, expectedChecksum string) error {
+	manifest, err := json.Marshal(revision.Manifest)
+	if err != nil {
+		return err
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx, `UPDATE manifest_sources SET commit_sha=?,manifest_json=?,checksum=?,updated_at=? WHERE id=? AND commit_sha=? AND checksum=?`, source.CommitSHA, source.ManifestJSON, source.Checksum, time.Now().Unix(), source.ID, expectedCommit, expectedChecksum)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n != 1 {
+		return fmt.Errorf("source changed while update was running")
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO revisions(id,app_id,manifest_json,config_json,compose_path,created_at) VALUES(?,?,?,?,?,?)`, revision.ID, revision.AppID, manifest, revision.ConfigJSON, revision.ComposePath, time.Now().Unix())
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `UPDATE app_instances SET name=?,version=?,compose_path=?,status=?,health=?,endpoints_json=?,storage_json=?,updated_at=? WHERE id=?`, instance.Name, instance.Version, instance.ComposePath, instance.Status, instance.Health, mustStoreJSON(instance.Endpoints), mustStoreJSON(instance.Storage), time.Now().Unix(), instance.ID)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func mustStoreJSON(v any) []byte { b, _ := json.Marshal(v); return b }
+
 func (s *SQLiteStore) GetLatestRevision(ctx context.Context, appID string) (*models.Revision, error) {
 	var rev models.Revision
 	var manifestJSON, configJSON []byte
@@ -523,4 +566,85 @@ func (s *SQLiteStore) GetLatestRevision(ctx context.Context, appID string) (*mod
 	return &rev, nil
 }
 
+func (s *SQLiteStore) CreateManifestSource(ctx context.Context, source *models.ManifestSource) error {
+	now := time.Now().Unix()
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO manifest_sources(id,source_url,owner,repo,path,ref,commit_sha,manifest_json,checksum,trust,created_at,updated_at)
+		 VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`,
+		source.ID, source.SourceURL, source.Owner, source.Repo, source.Path, source.Ref, source.CommitSHA, source.ManifestJSON, source.Checksum, source.Trust, now, now)
+	return err
+}
+
+func (s *SQLiteStore) GetManifestSource(ctx context.Context, id string) (*models.ManifestSource, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT id,source_url,owner,repo,path,ref,commit_sha,manifest_json,checksum,trust,created_at,updated_at FROM manifest_sources WHERE id=?`, id)
+	return s.scanManifestSource(row)
+}
+
+func (s *SQLiteStore) GetManifestSourceByURL(ctx context.Context, url string) (*models.ManifestSource, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT id,source_url,owner,repo,path,ref,commit_sha,manifest_json,checksum,trust,created_at,updated_at FROM manifest_sources WHERE source_url=?`, url)
+	return s.scanManifestSource(row)
+}
+
+func (s *SQLiteStore) ListManifestSources(ctx context.Context) ([]models.ManifestSource, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id,source_url,owner,repo,path,ref,commit_sha,manifest_json,checksum,trust,created_at,updated_at FROM manifest_sources ORDER BY updated_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var sources []models.ManifestSource
+	for rows.Next() {
+		src, err := s.scanManifestSource(rows)
+		if err != nil {
+			return nil, err
+		}
+		sources = append(sources, *src)
+	}
+	return sources, rows.Err()
+}
+
+func (s *SQLiteStore) DeleteManifestSource(ctx context.Context, id string) error {
+	res, err := s.db.ExecContext(ctx, `DELETE FROM manifest_sources WHERE id=?`, id)
+	if err != nil {
+		return err
+	}
+	affected, _ := res.RowsAffected()
+	if affected == 0 {
+		return fmt.Errorf("manifest source not found: %s", id)
+	}
+	return nil
+}
+
+func (s *SQLiteStore) UpdateManifestSourceTrust(ctx context.Context, id string, trust models.SourceTrust) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE manifest_sources SET trust=?, updated_at=? WHERE id=?`,
+		trust, time.Now().Unix(), id)
+	return err
+}
+
+func (s *SQLiteStore) UpdateManifestSourceManifest(ctx context.Context, source *models.ManifestSource) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE manifest_sources SET commit_sha=?, manifest_json=?, checksum=?, trust=?, updated_at=? WHERE id=?`,
+		source.CommitSHA, source.ManifestJSON, source.Checksum, source.Trust, time.Now().Unix(), source.ID)
+	return err
+}
+
+func (s *SQLiteStore) scanManifestSource(scanner interface{ Scan(dest ...any) error }) (*models.ManifestSource, error) {
+	var src models.ManifestSource
+	var createdAt, updatedAt int64
+	err := scanner.Scan(&src.ID, &src.SourceURL, &src.Owner, &src.Repo, &src.Path, &src.Ref, &src.CommitSHA, &src.ManifestJSON, &src.Checksum, &src.Trust, &createdAt, &updatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("manifest source not found")
+		}
+		return nil, err
+	}
+	src.CreatedAt = time.Unix(createdAt, 0).UTC()
+	src.UpdatedAt = time.Unix(updatedAt, 0).UTC()
+	return &src, nil
+}
+
 var _ AppManager = (*SQLiteStore)(nil)
+var _ SourceManager = (*SQLiteStore)(nil)
