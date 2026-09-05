@@ -14,6 +14,8 @@ OpenDash reads environment variables at startup and exits on invalid values.
 | `OPENDASH_USE_DOCKER_RUNTIME` | `true` | Use Docker CLI/Compose runtime. `false` selects a no-op runtime. |
 | `OPENDASH_CATALOG_ROOT` | `./catalog` | Local directory containing `index.json` and manifests. |
 | `OPENDASH_APPS_ROOT` | `./data/apps` | Managed root; projects install under `apps/<app-id>`. Must not be a symlink. |
+| `OPENDASH_BACKUPS_ROOT` | `./data/backups` | Root directory for backup archives and temporary restore data. |
+| `OPENDASH_WEB_ROOT` | `./web/dist` | Directory containing the built frontend SPA. When present, the backend serves it at `/`. Empty or missing directories result in a 404 for non-API routes. |
 | `OPENDASH_DB_PATH` | `./data/opendash.db` | SQLite database path; parent directory is created. |
 | `OPENDASH_DEMO_MODE` | `false` | Seed demo dashboard data into an empty database. |
 | `OPENDASH_AUTH_ENABLED` | `true` | Require sessions. When false, protected routes are open and auth actions return 404 except bootstrap status. Development only. |
@@ -28,7 +30,7 @@ OpenDash reads environment variables at startup and exits on invalid values.
 | --- | --- | --- |
 | `VITE_USE_MOCK_API` | unset/false | Set exactly `true` at Vite build/dev time to use in-browser mock responses. |
 
-Real mode calls `/api/v1` on the frontend origin. Vite development proxies `/api` to `http://localhost:8080`; production hosting must route that path to the API. The backend does not serve the SPA.
+Real mode calls `/api/v1` on the frontend origin. Vite development proxies `/api` to `http://localhost:8080`; production hosting must route that path to the API. When `OPENDASH_WEB_ROOT` points to a built `web/dist`, the backend serves the SPA as static files and falls back to `index.html` for client-side routing.
 
 ## Data and generated files
 

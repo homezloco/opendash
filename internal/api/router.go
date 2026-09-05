@@ -1,6 +1,10 @@
 package api
 
-import "net/http"
+import (
+	"net/http"
+	"os"
+	"path/filepath"
+)
 
 type Middleware func(http.Handler) http.Handler
 
@@ -46,10 +50,37 @@ func NewRouter(h *Handlers, bodyLimit int64) http.Handler {
 	protected.HandleFunc("GET /api/v1/recovery/export", h.RecoveryExport)
 	protected.HandleFunc("POST /api/v1/recovery/import-preview", h.RecoveryImportPreview)
 	root.Handle("/api/v1/", h.requireAuth(protected))
-	root.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	root.Handle("/", serveStaticOrSPA(h.staticRoot))
+	return chain(root, RequestID, RequestLogger, Recovery, SecurityHeaders, BodyLimit(bodyLimit))
+}
+
+func serveStaticOrSPA(root string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if root == "" {
+			RespondError(w, http.StatusNotFound, "not_found", "resource not found")
+			return
+		}
+		if _, err := os.Stat(root); os.IsNotExist(err) {
+			RespondError(w, http.StatusNotFound, "not_found", "resource not found")
+			return
+		}
+
+		// Try to serve an exact file first, then fall back to index.html for
+		// client-side routing. Path traversal is blocked by filepath.Clean.
+		cleanPath := filepath.Join(root, filepath.Clean("/"+r.URL.Path))
+		if info, err := os.Stat(cleanPath); err == nil && !info.IsDir() {
+			http.ServeFile(w, r, cleanPath)
+			return
+		}
+
+		index := filepath.Join(root, "index.html")
+		if info, err := os.Stat(index); err == nil && !info.IsDir() {
+			http.ServeFile(w, r, index)
+			return
+		}
+
 		RespondError(w, http.StatusNotFound, "not_found", "resource not found")
 	})
-	return chain(root, RequestID, RequestLogger, Recovery, SecurityHeaders, BodyLimit(bodyLimit))
 }
 
 func chain(h http.Handler, middlewares ...Middleware) http.Handler {

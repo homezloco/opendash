@@ -1,0 +1,51 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly on Sundays at 00:00 UTC.
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+          cache-dependency-path: go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Go vet
+        run: go vet ./...
+      - name: Build with trimpath
+        run: go build -trimpath -o opendash ./cmd/opendash
+      - name: Check docker.sock permissions
+        run: |
+          if [ -S /var/run/docker.sock ]; then
+            perms=$(stat -c '%a' /var/run/docker.sock 2>/dev/null || echo "unknown")
+            if [ "$perms" = "666" ] || [ "$perms" = "777" ]; then
+              echo "::warning::docker.sock is world-writable ($perms); restrict access to the opendash service account"
+            fi
+          fi
+      - name: npm audit
+        working-directory: web
+        run: npm audit --audit-level=high
+        continue-on-error: true
+      - name: Run gosec if available
+        run: |
+          if command -v gosec >/dev/null 2>&1; then
+            gosec ./...
+          else
+            echo "gosec not installed; skipping gosec scan"
+          fi

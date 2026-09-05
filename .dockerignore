@@ -1,10 +1,19 @@
+# Git
+.git
+.gitignore
+
 # Build outputs
 /opendash
 /cmd/opendash/opendash
 /dist
-*.exe
 /web/dist
-*.tsbuildinfo
+*.exe
+*.tar.gz
+
+# Node
+web/node_modules
+web/.vite
+web/*.tsbuildinfo
 
 # Go
 vendor/
@@ -12,31 +21,24 @@ vendor/
 *.out
 coverage/
 
-# Node
-node_modules/
-npm-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
+# IDE/OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 
 # Environment
 .env
 .env.local
 *.pem
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
 # Logs
 *.log
 
-# Temporary
+# Temporary / runtime data
 tmp/
 temp/
+data/

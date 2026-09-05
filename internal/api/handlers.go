@@ -14,6 +14,7 @@ import (
 	"github.com/opendash-project/opendash/internal/auth"
 	"github.com/opendash-project/opendash/internal/backup"
 	"github.com/opendash-project/opendash/internal/catalog"
+	"github.com/opendash-project/opendash/internal/githubsource"
 	"github.com/opendash-project/opendash/internal/models"
 	"github.com/opendash-project/opendash/internal/recovery"
 	"github.com/opendash-project/opendash/internal/runtime"
@@ -32,6 +33,7 @@ type Handlers struct {
 	dataSource          string
 	catalogRoot         string
 	appsRoot            string
+	staticRoot          string
 	baseCtx             context.Context
 	wg                  sync.WaitGroup
 	sourceService       *sources.Service
@@ -82,6 +84,20 @@ func (h *Handlers) ConfigureCatalog(catalogRoot, appsRoot string) {
 	}
 	if sm, ok := h.store.(store.SourceManager); ok {
 		h.sourceService = sources.NewService(sm, nil, h.appsRoot)
+	}
+}
+
+// ConfigureStatic sets the directory from which the SPA is served. When empty
+// the backend returns 404 for non-API routes.
+func (h *Handlers) ConfigureStatic(root string) {
+	h.staticRoot = root
+}
+
+// SetSourceResolver injects a GitHub resolver, primarily for end-to-end tests
+// that must avoid real network calls.
+func (h *Handlers) SetSourceResolver(r *githubsource.Resolver) {
+	if h.sourceService != nil {
+		h.sourceService.Resolver = r
 	}
 }
 

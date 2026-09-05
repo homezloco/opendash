@@ -21,6 +21,7 @@ type Config struct {
 	CatalogRoot      string
 	AppsRoot         string
 	BackupsRoot      string
+	WebRoot          string
 	DatabasePath     string
 	DemoMode         bool
 	AuthEnabled      bool
@@ -42,6 +43,7 @@ func Load() (*Config, error) {
 		CatalogRoot:      envOrDefault("OPENDASH_CATALOG_ROOT", "./catalog"),
 		AppsRoot:         envOrDefault("OPENDASH_APPS_ROOT", "./data/apps"),
 		BackupsRoot:      envOrDefault("OPENDASH_BACKUPS_ROOT", "./data/backups"),
+		WebRoot:          envOrDefault("OPENDASH_WEB_ROOT", "./web/dist"),
 		DatabasePath:     envOrDefault("OPENDASH_DB_PATH", "./data/opendash.db"),
 		DemoMode:         false,
 		AuthEnabled:      true,

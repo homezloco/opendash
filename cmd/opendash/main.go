@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -18,7 +20,16 @@ import (
 	"github.com/opendash-project/opendash/internal/store"
 )
 
+var version = "dev"
+
 func main() {
+	showVersion := flag.Bool("version", false, "print version and exit")
+	flag.Parse()
+	if *showVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
 	cfg, err := config.Load()
 	if err != nil {
 		slog.Error("failed to load config", "error", err)
@@ -52,6 +63,7 @@ func main() {
 	h.ConfigureAuth(auth.New(s.DB(), cfg.SessionLifetime), cfg.AuthEnabled, cfg.SecureCookies, cfg.SessionLifetime)
 	h.ConfigureCatalog(cfg.CatalogRoot, cfg.AppsRoot)
 	h.ConfigureBackups(cfg.BackupsRoot)
+	h.ConfigureStatic(cfg.WebRoot)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

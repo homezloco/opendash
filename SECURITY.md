@@ -20,4 +20,16 @@ Do not open a public issue for a vulnerability. Email the maintainers or use the
 
 Security headers include `nosniff`, frame denial, a same-origin content policy, referrer policy, and restrictive permissions policy. Managed runtime paths are constrained beneath the configured apps root and reject a symlinked root.
 
+## Automated checks
+
+The `security` Makefile target and the optional `.github/workflows/security.yml` job run:
+
+- `go vet ./...`
+- `go build -trimpath`
+- A warning if `/var/run/docker.sock` is world-writable (`666` or `777`)
+- `npm audit --audit-level=high` in `web/`
+- `gosec` when installed (otherwise a warning is printed and the check continues)
+
+These checks do not upload secrets, disable repository security policies, or broaden Docker socket permissions. Build artifacts are produced with `-trimpath` so that host paths are not embedded in release binaries.
+
 See [Docker access](docs/getting-started.md#docker-and-snap-socket-access), [configuration](docs/configuration.md), and [ADR 002](docs/architecture/adr-002-threat-model.md).

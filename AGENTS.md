@@ -21,7 +21,16 @@ node validate-schemas.mjs
 docker build -t opendash:latest .
 ```
 
-Equivalent Make targets are `web-typecheck`, `web-test`, `web-build`, `go-test`, `go-vet`, `go-build`, `validate-schemas`, and `docker-build`.
+Equivalent Make targets are `fmt`, `go-test`, `go-vet`, `go-build`, `web-typecheck`, `web-test`, `web-build`, `validate-schemas`, and `docker-build`.
+
+Top-level orchestration targets:
+
+- `make build` — build the SPA and the Go binary.
+- `make test` — run Go tests and web tests.
+- `make vet` — run `go vet ./...`.
+- `make security` — run `go vet`, a `-trimpath` build, Docker socket permission checks, `npm audit --audit-level=high`, and `gosec` if installed.
+- `make dist` — produce `dist/opendash-<version>-<os>-<arch>.tar.gz` containing the binary, built `web/dist`, systemd units, and `README.md`.
+- `scripts/e2e-smoke.sh` — start the server on a temporary SQLite database, bootstrap the admin, list the catalog, and shut down cleanly (no Docker required).
 
 The optional `docker_live` test mutates the Docker daemon and uses the exact resource prefix `opendash-test-hello`; follow `CONTRIBUTING.md` and verify cleanup. Never broaden socket permissions (for example with `chmod 666`).
 
