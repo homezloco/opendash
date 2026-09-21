@@ -1,8 +1,18 @@
 name: CI
 
+# Improvement-loop notes (see loop.md):
+# - `opendash/**` push triggers let loop branches (`opendash/loop-*`) be
+#   verified by CI without opening a PR.
+# - `go test ./...` intentionally excludes the `docker_live` test: it is
+#   gated behind `-tags=docker_live` + `OPENDASH_DOCKER_LIVE=1` and
+#   mutates a real Docker daemon. It stays a manual, authorized-only check.
+# - The `docker` job only builds the image (no daemon mutation beyond the
+#   build) and is continue-on-error; `e2e` uses a temp SQLite DB and no
+#   Docker, so both are CI-safe.
+
 on:
   push:
-    branches: [main]
+    branches: [main, "opendash/**"]
   pull_request:
     branches: [main]
 
