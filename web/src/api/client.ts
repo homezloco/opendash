@@ -21,6 +21,7 @@ import type {
   RecoveryInventory,
   RecoveryImportPreview,
   DashboardPreferences,
+  SupportBundle,
 } from "./types";
 import {
   mockActivity,
@@ -97,6 +98,7 @@ function getMockData<T>(path: string): T {
     "/protection": mockProtection,
     "/activity": mockActivity,
     "/dashboard/preferences": { defaultView: "grid", tileDensity: "normal", tileSize: "medium", groupBy: "none", sortBy: "manual", tileOrder: [], favoriteAppIds: [], hiddenFields: {} },
+    "/diagnostics/bundle": { generatedAt: new Date().toISOString(), version: "dev", goos: "linux", goarch: "amd64", findings: [] },
   };
   if (path.startsWith("/apps/")) {
     const rest = path.slice(6);
@@ -177,6 +179,7 @@ export const api = {
   uninstallApp: (id: string) =>
     request<Operation>(`/apps/${id}/uninstall`, { method: "POST" }),
   getProtection: () => request<ProtectionOverview>("/protection"),
+  getSupportBundle: () => request<SupportBundle>("/diagnostics/bundle"),
   getActivity: () => request<ActivityEvent[]>("/activity"),
   getSources: () => request<SourceListItem[]>("/sources"),
   previewSource: (url: string) =>

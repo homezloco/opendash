@@ -10,6 +10,10 @@ The browser keeps an `HttpOnly` session cookie and the frontend sends the sessio
 
 On the **Apps** page, open **Dashboard settings** to choose grid or list view, tile density and size, grouping and sorting, and which compact fields are hidden. Star favorite apps and use **Move to top** to define manual order. Preferences are saved in SQLite for the administrator and restored on later visits.
 
+## Diagnostics and support bundle
+
+On the **Overview** page, **Download support bundle** produces a redacted JSON snapshot of OpenDash state for support or incident analysis. It includes the OpenDash build, host readiness, diagnostic findings, attention items, installed app metadata, catalog, sources, backup records, recent activity, and operation history. Application configuration values and any operation output are redacted to `REDACTED`; only configuration keys are retained. Secrets, session tokens, and admin credentials are never included.
+
 ## Browse and install from the catalog
 
 The catalog is loaded from the local `index.json`; OpenDash does not fetch GitHub or other remote catalogs. Open an app, request its install plan, and review:

@@ -36,6 +36,7 @@ func NewRouter(h *Handlers, bodyLimit int64) http.Handler {
 	protected.HandleFunc("GET /api/v1/operations/{id}", h.AppOperation)
 	protected.HandleFunc("GET /api/v1/protection", h.Protection)
 	protected.HandleFunc("GET /api/v1/activity", h.Activity)
+	protected.HandleFunc("GET /api/v1/diagnostics/bundle", h.SupportBundle)
 	protected.HandleFunc("GET /api/v1/dashboard/preferences", h.DashboardPreferences)
 	protected.HandleFunc("PUT /api/v1/dashboard/preferences", h.UpdateDashboardPreferences)
 	protected.HandleFunc("POST /api/v1/sources/preview", h.SourcePreview)

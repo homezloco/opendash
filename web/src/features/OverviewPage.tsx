@@ -1,3 +1,4 @@
+import { useCallback, useState } from "react";
 import { api } from "@/api";
 import type { SystemSummary } from "@/api/types";
 import { useAsync } from "@/hooks/use-async";
@@ -117,6 +118,41 @@ export function OverviewPage() {
       <DataGuard state={summary.state} error={summary.error}>
         {summary.data && <SummaryCards summary={summary.data} />}
       </DataGuard>
+      <SupportBundleDownload />
     </>
+  );
+}
+
+function SupportBundleDownload() {
+  const [busy, setBusy] = useState(false);
+  const download = useCallback(async () => {
+    setBusy(true);
+    try {
+      const bundle = await api.getSupportBundle();
+      const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `opendash-support-bundle-${new Date(bundle.generatedAt).toISOString()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  return (
+    <section style={{ marginTop: "var(--space-6)" }}>
+      <h2 style={{ fontSize: "var(--text-lg)", color: "var(--color-text-primary)", marginBottom: "var(--space-3)" }}>
+        Diagnostics
+      </h2>
+      <p style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-3)" }}>
+        Download a redacted support bundle with system state, app metadata, and
+        recent activity. Secrets and configuration values are redacted.
+      </p>
+      <button onClick={download} disabled={busy} type="button">
+        {busy ? "Generating..." : "Download support bundle"}
+      </button>
+    </section>
   );
 }

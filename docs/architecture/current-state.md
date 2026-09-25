@@ -3,7 +3,7 @@
 ## Components
 
 - `cmd/opendash` loads environment configuration, opens SQLite, recovers interrupted operation records, selects Docker or no-op runtime, and serves the API.
-- `internal/api` provides `/api/v1`, authentication/CSRF middleware, persisted dashboard-preference endpoints, catalog/install planning, lifecycle handlers, observation, and in-process asynchronous operation workers.
+- `internal/api` provides `/api/v1`, authentication/CSRF middleware, persisted dashboard-preference endpoints, catalog/install planning, lifecycle handlers, observation, a redacted diagnostics support bundle, and in-process asynchronous operation workers.
 - `internal/auth` stores one Argon2id administrator and hashed opaque sessions in SQLite.
 - `internal/store` owns SQLite migrations and persistent dashboard, app, revision, and operation records. `internal/data` supplies optional demo seed rows.
 - `internal/catalog` loads local JSON, validates runtime constraints, evaluates selected risks/conflicts, allocates localhost ports, and renders Compose/environment files.
@@ -33,9 +33,10 @@ App reads invoke Compose observation and map service/container health and publis
 | Asynchronous operations | Implemented in-process; persistence/restart handling is partial |
 | Real frontend, persisted dashboard preferences, and explicit mock mode | Implemented |
 | Container/systemd examples | Partial; examples disable Docker and SPA serving is separate |
-| GitHub/remote catalog sources | Not implemented |
-| Updates or update diffs | Not implemented |
-| Backup, restore, or verification | Not implemented |
+| GitHub/remote catalog sources | Implemented for direct repository manifest URLs with preview, commit resolution, and update planning |
+| Updates or update diffs | Implemented as a preview/acknowledgement/lock workflow; update application is health-gated |
+| Backup, restore, or verification | Backup archives, restore preview, recovery inventory export/import implemented; destructive restore and live verification drills disabled |
+| Diagnostics/redacted support bundle | Implemented |
 | Image-signature verification | Not implemented |
 | Isolated privileged helper | Not implemented; checked-in unit is a future placeholder |
 | Production/public-internet hardening | Not provided |

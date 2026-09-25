@@ -12,6 +12,25 @@ export interface VerificationResult { backupId: string; projectName: string; hea
 export interface RecoveryInventory { version: number; exportedAt: string; apps: unknown[]; sources: unknown[]; backups: BackupArchive[] }
 export interface RecoveryImportPreview { valid: boolean; apps: number; sources: number; backups: number; untrustedSources: string[]; conflicts: { appId: string; kind: string; message: string }[]; strategy: string }
 
+export interface SupportBundle {
+  generatedAt: string;
+  version: string;
+  goos: string;
+  goarch: string;
+  warnings?: string[];
+  summary?: SystemSummary;
+  readiness?: { docker: boolean; compose: boolean; dockerVersion: string; composeVersion: string; errors: string[] };
+  readinessError?: string;
+  findings: { rule: string; status: HealthStatus; confidence: string; evidence: { source: string; message: string; timestamp: string }[] }[];
+  attention?: AttentionItem[];
+  apps?: unknown[];
+  catalog?: CatalogApp[];
+  sources?: ManifestSource[];
+  backups?: BackupArchive[];
+  activity?: ActivityEvent[];
+  operations?: { id: string; appId: string; kind: string; status: string; error?: string; createdAt: string; updatedAt: string }[];
+}
+
 export interface BootstrapStatus {
   authEnabled: boolean;
   bootstrapRequired: boolean;

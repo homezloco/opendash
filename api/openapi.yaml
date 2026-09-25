@@ -700,6 +700,18 @@ paths:
         "400": { description: Invalid preferences }
         "403": { description: Invalid CSRF token }
 
+  /diagnostics/bundle:
+    get:
+      summary: Download redacted support bundle
+      operationId: getSupportBundle
+      responses:
+        "200":
+          description: Redacted support bundle with system state and recent activity
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SupportBundle" }
+        "501": { description: Bundle not available for this data store }
+
 components:
   securitySchemes:
     sessionCookie:
@@ -735,6 +747,49 @@ components:
             health: { type: boolean }
             endpoints: { type: boolean }
         updatedAt: { type: string, format: date-time }
+    SupportBundle:
+      type: object
+      additionalProperties: false
+      required: [generatedAt, version, goos, goarch, findings]
+      properties:
+        generatedAt: { type: string, format: date-time }
+        version: { type: string }
+        goos: { type: string }
+        goarch: { type: string }
+        warnings: { type: array, items: { type: string } }
+        summary: { $ref: "#/components/schemas/SystemSummary" }
+        readiness:
+          type: object
+          properties:
+            docker: { type: boolean }
+            compose: { type: boolean }
+            dockerVersion: { type: string }
+            composeVersion: { type: string }
+            errors: { type: array, items: { type: string } }
+        readinessError: { type: string }
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              rule: { type: string }
+              status: { type: string }
+              confidence: { type: string }
+              evidence:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    source: { type: string }
+                    message: { type: string }
+                    timestamp: { type: string, format: date-time }
+        attention: { type: array, items: { $ref: "#/components/schemas/AttentionItem" } }
+        apps: { type: array }
+        catalog: { type: array, items: { $ref: "#/components/schemas/CatalogApp" } }
+        sources: { type: array, items: { $ref: "#/components/schemas/ManifestSource" } }
+        backups: { type: array }
+        activity: { type: array, items: { $ref: "#/components/schemas/ActivityEvent" } }
+        operations: { type: array }
     BootstrapStatus:
       type: object
       required: [authEnabled, bootstrapRequired]
