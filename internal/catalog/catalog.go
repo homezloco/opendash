@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -54,7 +55,7 @@ func LoadManifest(path string) (*models.Manifest, error) {
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("fetch remote manifest: status %d", resp.StatusCode)
 		}
-		data, err = os.ReadAll(resp.Body)
+		data, err = io.ReadAll(resp.Body)
 	} else {
 		data, err = os.ReadFile(path)
 	}
