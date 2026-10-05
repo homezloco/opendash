@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,6 +20,7 @@ var (
 	idPattern      = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 	semVerPattern  = regexp.MustCompile(`^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$`)
 	portMapPattern = regexp.MustCompile(`^((\d{1,3}\.)?\d{1,3}\.\d{1,3}\.\d{1,3}:)?(\d+):(\d+)$`)
+	ghURLPattern   = regexp.MustCompile(`^https://github\.com/([^/]+)/([^/]+)/blob/([^/]+)/(.+)$`)
 )
 
 const projectNamePrefix = "opendash-"
@@ -36,10 +38,31 @@ func LoadIndex(root string) (*models.CatalogIndex, error) {
 }
 
 func LoadManifest(path string) (*models.Manifest, error) {
-	data, err := os.ReadFile(path)
+	var data []byte
+	var err error
+
+	if ghURLPattern.MatchString(path) {
+		parts := ghURLPattern.FindStringSubmatch(path)
+		owner, repo, branch, file := parts[1], parts[2], parts[3], parts[4]
+		rawURL := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", owner, repo, branch, file)
+		
+		resp, err := http.Get(rawURL)
+		if err != nil {
+			return nil, fmt.Errorf("fetch remote manifest: %w", err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("fetch remote manifest: status %d", resp.StatusCode)
+		}
+		data, err = os.ReadAll(resp.Body)
+	} else {
+		data, err = os.ReadFile(path)
+	}
+	
 	if err != nil {
 		return nil, fmt.Errorf("read manifest: %w", err)
 	}
+	
 	var m models.Manifest
 	if err := json.Unmarshal(data, &m); err != nil {
 		return nil, fmt.Errorf("parse manifest: %w", err)
