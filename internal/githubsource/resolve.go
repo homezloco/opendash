@@ -121,6 +121,14 @@ func (r *Resolver) resolveWithPath(ctx context.Context, owner, repo, kind, ref s
 
 // FetchManifest retrieves the manifest bytes for a resolved commit and path.
 func (r *Resolver) FetchManifest(ctx context.Context, owner, repo, commit, manifestPath string) ([]byte, error) {
+	// If manifestPath is a full GitHub raw URL, parse it directly.
+	if ghOwner, ghRepo, ghRef, ghPath, err := parseGitHubRawURL(manifestPath); err == nil {
+		owner = ghOwner
+		repo = ghRepo
+		commit = ghRef // In this context, ref can be a branch or a commit SHA.
+		manifestPath = ghPath
+	}
+
 	u, err := url.Parse(r.RawBase)
 	if err != nil {
 		return nil, fmt.Errorf("invalid raw base URL: %w", err)
@@ -149,6 +157,30 @@ func (r *Resolver) FetchManifest(ctx context.Context, owner, repo, commit, manif
 		return nil, fmt.Errorf("raw content returned %d", resp.StatusCode)
 	}
 	return body, nil
+}
+
+// parseGitHubRawURL parses a raw GitHub content URL and returns the owner, repo, ref, and path.
+// Example: https://raw.githubusercontent.com/{owner}/{repo}/{ref}/{path}
+func parseGitHubRawURL(rawURL string) (owner, repo, ref, path string, err error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", "", "", "", fmt.Errorf("invalid URL: %w", err)
+	}
+
+	if u.Scheme != "https" || u.Host != "raw.githubusercontent.com" {
+		return "", "", "", "", errors.New("not a raw GitHub content URL")
+	}
+
+	parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
+	if len(parts) < 4 {
+		return "", "", "", "", errors.New("invalid raw GitHub content URL path")
+	}
+
+	owner = parts[0]
+	repo = parts[1]
+	ref = parts[2]
+	path = strings.Join(parts[3:], "/")
+	return owner, repo, ref, path, nil
 }
 
 // Resolve fetches and validates the manifest for the supplied URL. It returns
