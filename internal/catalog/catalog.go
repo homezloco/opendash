@@ -19,9 +19,8 @@ var (
 	idPattern      = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 	semVerPattern  = regexp.MustCompile(`^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$`)
 	portMapPattern = regexp.MustCompile(`^((\d{1,3}\.)?\d{1,3}\.\d{1,3}\.\d{1,3}:)?(\d+):(\d+)$`)
+	githubURLPattern = regexp.MustCompile(`^https://github\.com/[^/]+/[^/]+/blob/[^/]+/.+$`)
 )
-
-const projectNamePrefix = "opendash-"
 
 func LoadIndex(root string) (*models.CatalogIndex, error) {
 	data, err := os.ReadFile(filepath.Join(root, "index.json"))
@@ -62,6 +61,9 @@ func ValidateManifest(m *models.Manifest) error {
 	}
 	if m.Compose.File != "" && m.Compose.Inline != nil {
 		return errors.New("compose.file and compose.inline are mutually exclusive")
+	}
+	if m.Compose.File != "" && !githubURLPattern.MatchString(m.Compose.File) {
+		return fmt.Errorf("invalid compose.file URL: %q (must be a valid GitHub blob URL)", m.Compose.File)
 	}
 	if m.Compose.Inline != nil {
 		if len(m.Compose.Inline.Services) == 0 {
