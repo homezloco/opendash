@@ -57,6 +57,9 @@ func ValidateManifest(m *models.Manifest) error {
 	if !semVerPattern.MatchString(m.Version) {
 		return fmt.Errorf("invalid version %q", m.Version)
 	}
+	if m.Compose.File != "" && !strings.HasPrefix(m.Compose.File, "https://github.com/") {
+		return fmt.Errorf("invalid compose file URL %q: must start with https://github.com/", m.Compose.File)
+	}
 	if m.Compose.File == "" && m.Compose.Inline == nil {
 		return errors.New("compose.file or compose.inline is required")
 	}
