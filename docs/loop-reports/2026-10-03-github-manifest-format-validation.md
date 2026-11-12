@@ -13,3 +13,4 @@ Implement basic validation for GitHub manifest format as planned in PLAN.md.
 
 ## Changes
 - `internal/catalog/catalog.go`: Updated `ValidateManifest` to include a URL prefix check for `Compose.File`.
+- `docs/loop-reports/2026-10-03-github-manifest-format-validation.md`: Report documenting the implementation.
