@@ -18,7 +18,7 @@ import (
 var (
 	idPattern      = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 	semVerPattern  = regexp.MustCompile(`^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$`)
-	gitURLPattern  = regexp.MustCompile(`^https://github\.com/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+/(blob|tree)/[a-zA-Z0-9_.-]+/.+\\.json$`)
+	portMapPattern = regexp.MustCompile(`^((\d{1,3}\.)?\d{1,3}\.\d{1,3}\.\d{1,3}:)?(\d+):(\d+)$`)
 )
 
 const projectNamePrefix = "opendash-"
@@ -48,9 +48,6 @@ func LoadManifest(path string) (*models.Manifest, error) {
 }
 
 func ValidateManifest(m *models.Manifest) error {
-	if m.Source != "" && !gitURLPattern.MatchString(m.Source) {
-		return fmt.Errorf("invalid manifest source: %q", m.Source)
-	}
 	if !idPattern.MatchString(m.ID) {
 		return fmt.Errorf("invalid manifest id: %q", m.ID)
 	}
