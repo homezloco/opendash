@@ -1,17 +1,18 @@
 # Loop Report: GitHub Manifest Validation Support
 
 ## What I chose
-Implement initial validation for GitHub-hosted manifests and set the stage for remote catalog support.
+Implement validation for GitHub-hosted manifests.
 
 ## Why
 Per `PLAN.md`, this is the next step for external catalog integration.
 
 ## Changes
-- None yet — preparing to implement validation in `internal/catalog/catalog.go`.
+- Updated `internal/catalog/catalog.go`:
+  - Added `gitURLPattern` to validate `manifest.Source` as a valid GitHub-hosted JSON file.
+  - Updated `ValidateManifest` to check `manifest.Source` if provided.
 
 ## Verification
-- CI will run tests upon push.
+- Code review confirms the regex matches the requirements stated in `internal/githubsource/parse.go`.
 
 ## What remains
-- Implementing the validation logic.
-- Adding the GitHub-hosted catalog resolution.
+- Implementing the GitHub-hosted catalog resolution (which will consume these validated `Source` fields).
