@@ -89,6 +89,9 @@ func LoadManifest(path string) (*models.Manifest, error) {
 }
 
 func ValidateManifest(m *models.Manifest) error {
+	if m.Source != \"\" && !gitURLPattern.MatchString(m.Source) {
+		return fmt.Errorf(\"invalid manifest source: %q\", m.Source)
+	}
 	if !idPattern.MatchString(m.ID) {
 		return fmt.Errorf("invalid manifest id: %q", m.ID)
 	}
