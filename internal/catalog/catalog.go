@@ -3,17 +3,21 @@ package catalog
 import (
 	"errors"
 	"fmt"
-	"net/url"
+	"net"
+	"os"
+	"path/filepath"
 	"regexp"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/homezloco/opendash/internal/models"
 )
 
 var (
-	idPattern     = regexp.MustCompile(`^[a-z0-9-]+$`)
-	semVerPattern = regexp.MustCompile(`^v?\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$`)
-	ghURLPattern  = regexp.MustCompile(`^https://github\.com/[^/]+/[^/]+/blob/[^/]+/.+$`)
+	idPattern      = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
+	semVerPattern  = regexp.MustCompile(`^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$`)
+	ghURLPattern   = regexp.MustCompile(`^https://github\.com/[^/]+/[^/]+/blob/[^/]+/.+$`)
 )
 
 func ValidateManifest(m *models.Manifest) error {
@@ -80,6 +84,50 @@ func ValidateManifest(m *models.Manifest) error {
 }
 
 func ParsePortMapping(s string) (hostPort, containerPort int, err error) {
-	// ... (rest of the file preserved)
-	return 0, 0, nil
+	parts := strings.Split(s, ":")
+	switch len(parts) {
+	case 1:
+		cp, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+		if err != nil {
+			return 0, 0, fmt.Errorf("invalid port %q", s)
+		}
+		return 0, cp, nil
+	case 2:
+		hp, err := strconv.Atoi(strings.TrimSpace(parts[0]))
+		if err != nil || hp < 1 || hp > 65535 {
+			return 0, 0, fmt.Errorf("invalid host port in %q", s)
+		}
+		cp, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+		if err != nil || cp < 1 || cp > 65535 {
+			return 0, 0, fmt.Errorf("invalid container port in %q", s)
+		}
+		return hp, cp, nil
+	case 3:
+		hp, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+		if err != nil || hp < 1 || hp > 65535 {
+			return 0, 0, fmt.Errorf("invalid host port in %q", s)
+		}
+		cp, err := strconv.Atoi(strings.TrimSpace(parts[1]))
+		if err != nil || cp < 1 || cp > 65535 {
+			return 0, 0, fmt.Errorf("invalid container port in %q", s)
+		}
+		return hp, cp, nil
+	default:
+		return 0, 0, fmt.Errorf("invalid port mapping %q", s)
+	}
+}
+
+func DefaultProjectName(m *models.Manifest) string {
+	if m.Compose.ProjectName != "" {
+		return m.Compose.ProjectName
+	}
+	return "opendash-" + m.ID
+}
+
+func InstallPath(appsRoot string, m *models.Manifest) string {
+	return filepath.Join(appsRoot, "apps", m.ID)
+}
+
+func ApplyConfig(m *models.Manifest, overrides map[string]string) (map[string]string, []models.PlannedConfig, error) {
+    return nil, nil, nil
 }
