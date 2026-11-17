@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/homezloco/opendash/internal/models"
+	"github.com/opendash-project/opendash/internal/models"
 )
 
 var (
