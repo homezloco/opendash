@@ -1,22 +1,28 @@
 package catalog
 
 import (
-	\"errors\"
-	\"fmt\"
-	\"path/filepath\"
-	\"regexp\"
-	\"strconv\"
-	\"strings\"
+	"errors"
+	"fmt"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 
-	\"github.com/opendash-project/opendash/internal/models\"
+	"github.com/opendash-project/opendash/internal/models"
 )
 
-const projectNamePrefix = \"opendash-\"
+const projectNamePrefix = "opendash-"
 
 var (
-	idPattern      = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
-	semVerPattern  = regexp.MustCompile(`^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?(\\+[a-zA-Z0-9.]+)?$`)
-	ghURLPattern   = regexp.MustCompile(`^https://github\\.com/[^/]+/[^/]+/blob/[^/]+/.+$`)
+	idPattern      = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*package catalog
+
+)
+	semVerPattern  = regexp.MustCompile(`^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?package catalog
+
+)
+	ghURLPattern   = regexp.MustCompile(`^https://github\.com/[^/]+/[^/]+/blob/[^/]+/.+package catalog
+
+)
 )
 
 func ValidateManifest(m *models.Manifest) error {
