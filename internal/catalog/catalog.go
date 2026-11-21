@@ -16,12 +16,17 @@ import (
 )
 
 var (
-	idPattern      = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
-	semVerPattern  = regexp.MustCompile(`^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$`)
-	portMapPattern = regexp.MustCompile(`^((\d{1,3}\.)?\d{1,3}\.\d{1,3}\.\d{1,3}:)?(\d+):(\d+)$`)
+	idPattern        = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
+	semVerPattern    = regexp.MustCompile(`^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$`)
+	portMapPattern   = regexp.MustCompile(`^((\d{1,3}\.)?\d{1,3}\.\d{1,3}\.\d{1,3}:)?(\d+):(\d+)$`)
+	gitHubURLPattern = regexp.MustCompile(`^https://github.com/([a-zA-Z0-9-]+)/([a-zA-Z0-9-]+)/blob/([a-zA-Z0-9.-_]+)/(.+)$`)
 )
 
 const projectNamePrefix = "opendash-"
+
+func isValidGitHubURL(s string) bool {
+	return gitHubURLPattern.MatchString(s)
+}
 
 func LoadIndex(root string) (*models.CatalogIndex, error) {
 	data, err := os.ReadFile(filepath.Join(root, "index.json"))
@@ -54,6 +59,11 @@ func ValidateManifest(m *models.Manifest) error {
 	if strings.TrimSpace(m.Name) == "" {
 		return errors.New("manifest name is required")
 	}
+
+	if m.Compose.File != "" && !isValidGitHubURL(m.Compose.File) {
+		return fmt.Errorf("compose file must be a valid GitHub URL: %s", m.Compose.File)
+	}
+
 	if !semVerPattern.MatchString(m.Version) {
 		return fmt.Errorf("invalid version %q", m.Version)
 	}
