@@ -79,6 +79,22 @@ func (r *Resolver) ResolveRef(ctx context.Context, owner, repo, ref string) (str
 	return r.resolveWithPath(ctx, owner, repo, "commits", ref)
 }
 
+// ParseGitHubURL extracts owner, repo, branch, and path from a GitHub blob URL.
+func ParseGitHubURL(rawURL string) (owner, repo, branch, path string, err error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", "", "", "", err
+	}
+	if u.Host != "github.com" {
+		return "", "", "", "", errors.New("not a github.com URL")
+	}
+	parts := strings.Split(strings.TrimPrefix(u.Path, "/"), "/")
+	if len(parts) < 5 || parts[2] != "blob" {
+		return "", "", "", "", errors.New("invalid github blob URL format")
+	}
+	return parts[0], parts[1], parts[3], strings.Join(parts[4:], "/"), nil
+}
+
 func (r *Resolver) resolveWithPath(ctx context.Context, owner, repo, kind, ref string) (string, error) {
 	u, err := url.Parse(r.APIBase)
 	if err != nil {
