@@ -6,3 +6,4 @@
 
 ## Later
 - [ ] Expand catalog source support to private repositories (requires PAT/auth).
+- [ ] Implement authentication for private repository manifest fetching.
